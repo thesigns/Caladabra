@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="Caladabra/Caladabra.csproj" />
+  <Project Path="Caladabra.Core/Caladabra.Core.csproj" />
+  <Project Path="Caladabra.Console/Caladabra.Console.csproj" />
+  <Project Path="Caladabra.Desktop/Caladabra.Desktop.csproj" />
 </Solution>
