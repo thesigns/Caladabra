@@ -38,16 +38,14 @@ public sealed class GameScene : IScene
     private int _hoveredChoiceIndex = -1;
     private Vector2i _mousePosition;
 
-    // Double-click detection
-    private Clock _clickClock = new();
-    private int _lastClickedIndex = -1;
-    private const float DoubleClickTime = 0.3f;  // 300ms
+    // Error message display
+    private string? _errorMessage;
+    private float _errorMessageTimer = 0f;
+    private const float ErrorMessageDuration = 2.0f;  // 2 sekundy
 
-    // Hold-to-eat detection
-    private Clock _holdClock = new();
-    private bool _isHolding;
-    private int _holdingIndex = -1;
-    private const float HoldTime = 0.8f;  // 800ms
+    // Lista Kart button
+    private FloatRect _cardListButtonRect;
+    private bool _cardListSceneOpen = false;
 
     // Layout constants (bazowe dla 1920x1080)
     private const float PaddingVertical = 20f;
@@ -91,7 +89,7 @@ public sealed class GameScene : IScene
             FillColor = Theme.TextPrimary
         };
 
-        _infoText = new Text(font, "ESC = wyjście | Double-click = zagraj | Przytrzymaj = zjedz", _game.Scale.S(Theme.FontSizeSmall))
+        _infoText = new Text(font, "ESC = wyjście | LPM = zagraj | PPM = zjedz", _game.Scale.S(Theme.FontSizeSmall))
         {
             FillColor = Theme.TextSecondary
         };
@@ -101,8 +99,7 @@ public sealed class GameScene : IScene
 
     public void Exit()
     {
-        _clickClock.Dispose();
-        _holdClock.Dispose();
+        // Nie dispose clocks - scena może być wznowiona (overlay)
     }
 
     public void HandleEvent(Event sfmlEvent)
@@ -123,19 +120,39 @@ public sealed class GameScene : IScene
             UpdateHoveredCard();
         }
 
+        // LPM = zagraj kartę
         if (sfmlEvent.Type == EventType.MouseButtonPressed && sfmlEvent.MouseButton.Button == Mouse.Button.Left)
         {
-            HandleMouseDown();
+            HandleLeftClick();
         }
 
-        if (sfmlEvent.Type == EventType.MouseButtonReleased && sfmlEvent.MouseButton.Button == Mouse.Button.Left)
+        // PPM = zjedz kartę
+        if (sfmlEvent.Type == EventType.MouseButtonPressed && sfmlEvent.MouseButton.Button == Mouse.Button.Right)
         {
-            HandleMouseUp();
+            HandleRightClick();
         }
     }
 
-    private void HandleMouseDown()
+    private void HandleLeftClick()
     {
+        // Check "Lista Kart" button click
+        if (_cardListButtonRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
+        {
+            OpenCardListScene(CardListMode.Browse);
+            return;
+        }
+
+        // If awaiting CardList choice, open CardListScene (handled in Update, but also allow manual click)
+        if (_controller.IsAwaitingChoice && State.PendingChoice != null)
+        {
+            var choiceType = State.PendingChoice.Type;
+            if (choiceType == ChoiceType.SelectFromCardList || choiceType == ChoiceType.SelectFromCardListFiltered)
+            {
+                OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
+                return;
+            }
+        }
+
         // If awaiting choice, handle choice selection
         if (_controller.IsAwaitingChoice && _hoveredChoiceIndex >= 0)
         {
@@ -144,55 +161,58 @@ public sealed class GameScene : IScene
             return;
         }
 
-        // Regular card interaction (only in Hand)
-        if (_hoveredHandIndex < 0) return;
-
-        // Check for double-click
-        float elapsed = _clickClock.ElapsedTime.AsSeconds();
-        if (_lastClickedIndex == _hoveredHandIndex && elapsed < DoubleClickTime)
+        // Zagraj kartę z ręki (single-click LPM)
+        if (_hoveredHandIndex >= 0)
         {
-            // Double-click detected - play card
+            // Sprawdź czy mamy dość SW
+            if (!_controller.CanPlayCard(_hoveredHandIndex))
+            {
+                ShowErrorMessage("Masz za mało Siły Woli żeby zagrać tę kartę");
+                return;
+            }
+
             if (_controller.PlayCard(_hoveredHandIndex))
             {
-                _lastClickedIndex = -1;
                 _hoveredCard = null;
                 _hoveredHandIndex = -1;
             }
-            return;
         }
-
-        // Start tracking for potential double-click or hold
-        _clickClock.Restart();
-        _lastClickedIndex = _hoveredHandIndex;
-
-        // Start hold tracking
-        _holdClock.Restart();
-        _isHolding = true;
-        _holdingIndex = _hoveredHandIndex;
     }
 
-    private void HandleMouseUp()
+    private void HandleRightClick()
     {
-        _isHolding = false;
-        _holdingIndex = -1;
+        // Zjedz kartę z ręki (single-click PPM)
+        if (_hoveredHandIndex >= 0 && !_controller.IsAwaitingChoice)
+        {
+            if (_controller.EatCard(_hoveredHandIndex))
+            {
+                _hoveredCard = null;
+                _hoveredHandIndex = -1;
+            }
+        }
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        _errorMessage = message;
+        _errorMessageTimer = ErrorMessageDuration;
     }
 
     public void Update(float deltaTime)
     {
-        // Check for hold-to-eat
-        if (_isHolding && _holdingIndex >= 0)
+        // Update error message timer
+        if (_errorMessageTimer > 0)
         {
-            if (_holdClock.ElapsedTime.AsSeconds() >= HoldTime)
+            _errorMessageTimer -= deltaTime;
+        }
+
+        // Auto-open CardListScene for CardList choices
+        if (_controller.IsAwaitingChoice && State.PendingChoice != null && !_cardListSceneOpen)
+        {
+            var choiceType = State.PendingChoice.Type;
+            if (choiceType == ChoiceType.SelectFromCardList || choiceType == ChoiceType.SelectFromCardListFiltered)
             {
-                // Hold completed - eat card
-                if (_controller.EatCard(_holdingIndex))
-                {
-                    _isHolding = false;
-                    _holdingIndex = -1;
-                    _hoveredCard = null;
-                    _hoveredHandIndex = -1;
-                    _lastClickedIndex = -1;
-                }
+                OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
             }
         }
 
@@ -212,16 +232,9 @@ public sealed class GameScene : IScene
             _infoText.DisplayedString = State.PendingChoice.Prompt;
             _infoText.FillColor = new Color(255, 200, 100);
         }
-        else if (_isHolding && _holdingIndex >= 0)
-        {
-            float progress = _holdClock.ElapsedTime.AsSeconds() / HoldTime;
-            int percent = (int)(progress * 100);
-            _infoText.DisplayedString = $"Przytrzymaj aby zjeść... {percent}%";
-            _infoText.FillColor = Theme.TextSecondary;
-        }
         else
         {
-            _infoText.DisplayedString = "ESC = wyjście | Double-click = zagraj | Przytrzymaj = zjedz";
+            _infoText.DisplayedString = "ESC = wyjście | LPM = zagraj | PPM = zjedz";
             _infoText.FillColor = Theme.TextSecondary;
         }
     }
@@ -462,6 +475,9 @@ public sealed class GameScene : IScene
 
         // Info text at bottom
         DrawInfoBar(window);
+
+        // Error message (na wierzchu)
+        DrawErrorMessage(window);
     }
 
     private void DrawStatusBar(RenderWindow window)
@@ -495,7 +511,9 @@ public sealed class GameScene : IScene
         float width = _game.Scale.S(PreviewPanelWidth);
         float buttonHeight = _game.Scale.S(35f);
 
-        // Przycisk "Lista Kart" (placeholder)
+        // Przycisk "Lista Kart"
+        _cardListButtonRect = new FloatRect(new Vector2f(x, baseY), new Vector2f(width, buttonHeight));
+
         var buttonBg = new RectangleShape(new Vector2f(width, buttonHeight))
         {
             Position = new Vector2f(x, baseY),
@@ -814,6 +832,50 @@ public sealed class GameScene : IScene
         window.Draw(_infoText);
     }
 
+    private void DrawErrorMessage(RenderWindow window)
+    {
+        if (_errorMessageTimer <= 0 || string.IsNullOrEmpty(_errorMessage))
+            return;
+
+        // Oblicz alpha na podstawie pozostałego czasu (fade out w ostatniej sekundzie)
+        byte alpha = 255;
+        if (_errorMessageTimer < 1.0f)
+        {
+            alpha = (byte)(_errorMessageTimer * 255);
+        }
+
+        // Tekst komunikatu
+        var errorText = new Text(_game.Assets.DefaultFont, _errorMessage, _game.Scale.S(Theme.FontSizeNormal))
+        {
+            FillColor = new Color(255, 255, 255, alpha)
+        };
+        var textBounds = errorText.GetLocalBounds();
+
+        // Prostokąt tła
+        float padding = _game.Scale.S(20f);
+        float rectWidth = textBounds.Size.X + padding * 2;
+        float rectHeight = textBounds.Size.Y + padding * 2;
+
+        float rectX = (_game.Scale.CurrentWidth - rectWidth) / 2;
+        float rectY = (_game.Scale.CurrentHeight - rectHeight) / 2;
+
+        var bgRect = new RectangleShape(new Vector2f(rectWidth, rectHeight))
+        {
+            Position = new Vector2f(rectX, rectY),
+            FillColor = new Color(180, 60, 60, alpha),
+            OutlineColor = new Color(220, 80, 80, alpha),
+            OutlineThickness = _game.Scale.S(2f)
+        };
+        window.Draw(bgRect);
+
+        // Wyśrodkuj tekst w prostokącie
+        errorText.Position = new Vector2f(
+            rectX + padding,
+            rectY + padding - _game.Scale.S(4f)  // korekta pionowa dla fontu
+        );
+        window.Draw(errorText);
+    }
+
     private void UpdateLayout()
     {
         // Update font sizes
@@ -821,5 +883,44 @@ public sealed class GameScene : IScene
         _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal);
         _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal);
         _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeSmall);
+    }
+
+    private void OpenCardListScene(CardListMode mode, Flavor? flavorFilter = null)
+    {
+        if (_cardListSceneOpen) return;
+
+        _cardListSceneOpen = true;
+
+        CardListScene cardListScene;
+
+        if (mode == CardListMode.Select && State.PendingChoice != null)
+        {
+            // Select mode - użyj opcji z PendingChoice (zachowuje indeksy)
+            cardListScene = new CardListScene(_game, State.PendingChoice.Options, flavorFilter)
+            {
+                OnClose = () => _cardListSceneOpen = false,
+                OnCardSelected = selectedIndex =>
+                {
+                    _game.SceneManager.PopScene();
+                    _cardListSceneOpen = false;
+                    _controller.MakeChoice(selectedIndex);
+                }
+            };
+        }
+        else
+        {
+            // Browse mode - pokaż wszystkie karty
+            cardListScene = new CardListScene(_game, flavorFilter)
+            {
+                OnClose = () => _cardListSceneOpen = false
+            };
+        }
+
+        _game.SceneManager.PushScene(cardListScene);
+    }
+
+    public void OnCardListSceneClosed()
+    {
+        _cardListSceneOpen = false;
     }
 }
