@@ -59,8 +59,18 @@ Every card has a taste. Literally.
 
 ## Status
 
-Work in progress. Currently playable in console mode (JSON turn-by-turn or interactive).
+Work in progress. Playable in **Desktop** (SFML.Net) and **Console** modes.
 
+### Desktop (recommended)
+```bash
+dotnet run --project Caladabra.Desktop
+```
+- Full graphical interface
+- Card preview on hover
+- LPM = play card, PPM = eat card
+- CardList browser with scrolling
+
+### Console
 ```bash
 # Interactive mode
 dotnet run --project Caladabra.Console -- interactive
@@ -76,8 +86,9 @@ dotnet run --project Caladabra.Console -- eat 2
 ## Tech Stack
 
 - C# / .NET 9
-- Core library + Console runner
-- Desktop (SFML.Net) — planned
+- Core library (game logic)
+- Desktop client (SFML.Net 3.0.0)
+- Console runner (interactive + JSON API)
 
 ---
 
