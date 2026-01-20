@@ -367,11 +367,11 @@ similar to editorial comic style. On transparent background.
 │                         │
 │         Nazwa           │
 │                         │
-│      ┌─────────┐        │
-│      │         │        │
+│      ┌──────────┐       │
+│      │          │       │
 │      │Ilustracja│       │
-│      │         │        │
-│      └─────────┘        │
+│      │          │       │
+│      └──────────┘       │
 │                         │
 │      Instrukcja         │
 │                         │
