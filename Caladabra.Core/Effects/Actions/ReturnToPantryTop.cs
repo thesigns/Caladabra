@@ -4,8 +4,10 @@ using Caladabra.Core.Zones;
 namespace Caladabra.Core.Effects.Actions;
 
 /// <summary>
-/// Przenosi kartę źródłową (context.SourceCard) ze stołu na wierzch spiżarni.
-/// Używane przez Diabelski bumerang.
+/// Przenosi kartę źródłową (context.SourceCard) na wierzch spiżarni.
+/// Używane przez Diabelski bumerang w OnTableCounterZero.
+/// Uwaga: Karta jest już usunięta ze Stołu przez GameEngine.ProcessStartOfTurn()
+/// przed wywołaniem OnTableCounterZero.
 /// </summary>
 public sealed class ReturnToPantryTop : IEffect
 {
@@ -14,16 +16,12 @@ public sealed class ReturnToPantryTop : IEffect
     public EffectResult Execute(EffectContext context)
     {
         if (context.SourceCard == null)
-        {
             return EffectResult.Done();
-        }
 
         var card = context.SourceCard;
 
-        // Usuń ze stołu
-        context.State.Table.Remove(card);
-
         // Połóż na wierzch spiżarni
+        // (karta została już usunięta ze stołu przez GameEngine przed wywołaniem OnTableCounterZero)
         context.State.Pantry.AddToTop(card);
         context.Emit(new CardMovedEvent(card, ZoneType.Table, ZoneType.Pantry));
 

@@ -1,3 +1,4 @@
+using Caladabra.Core.Cards;
 using Caladabra.Core.Events;
 using Caladabra.Core.Zones;
 
@@ -32,33 +33,47 @@ public sealed class AddChosenToHand : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
-        if (context.ChosenCard == null)
-        {
-            return EffectResult.Done();
-        }
+        Card? card;
 
-        var card = context.ChosenCard;
-
-        // Usuń kartę ze źródłowej strefy jeśli określono
-        if (_fromZone.HasValue)
+        // Dla stref wymagających usunięcia, użyj indeksu (po JSON restore referencje nie działają)
+        if (_fromZone.HasValue && context.ChosenIndices != null && context.ChosenIndices.Length > 0)
         {
+            var index = context.ChosenIndices[0];
+
             switch (_fromZone.Value)
             {
                 case ZoneType.Toilet:
-                    context.State.Toilet.Remove(card);
-                    break;
-                case ZoneType.Stomach:
-                    // Żołądek to kolejka - nie ma bezpośredniego Remove
+                    card = context.State.Toilet.RemoveAt(index);
                     break;
                 case ZoneType.Table:
-                    context.State.Table.Remove(card);
+                    var entries = context.State.Table.Entries.ToList();
+                    if (index >= 0 && index < entries.Count)
+                    {
+                        card = entries[index].Card;
+                        context.State.Table.Remove(card);
+                    }
+                    else
+                    {
+                        return EffectResult.Done();
+                    }
+                    break;
+                default:
+                    card = context.ChosenCard;
                     break;
             }
         }
+        else
+        {
+            // Dla CardList - używamy klona z ChosenCard
+            card = context.ChosenCard?.Clone();
+        }
+
+        if (card == null)
+            return EffectResult.Done();
 
         // Dodaj do ręki
         context.State.Hand.Add(card);
-        context.Emit(new CardDrawnEvent(card)); // Używamy CardDrawnEvent bo karta trafia do ręki
+        context.Emit(new CardDrawnEvent(card));
 
         return EffectResult.Done();
     }

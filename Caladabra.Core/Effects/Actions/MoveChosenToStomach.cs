@@ -1,4 +1,5 @@
 using Caladabra.Core.Events;
+using Caladabra.Core.Zones;
 
 namespace Caladabra.Core.Effects.Actions;
 
@@ -11,23 +12,28 @@ public sealed class MoveChosenToStomach : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
-        if (context.ChosenCard == null)
-        {
+        // Użyj indeksu zamiast referencji (po JSON restore referencje nie działają)
+        if (context.ChosenIndices == null || context.ChosenIndices.Length == 0)
             return EffectResult.Done();
-        }
 
-        var card = context.ChosenCard;
+        var index = context.ChosenIndices[0];
+        var card = context.State.Hand.GetAt(index);
+        if (card == null)
+            return EffectResult.Done();
 
         // Usuń z ręki
-        var handIndex = context.State.Hand.Cards.ToList().IndexOf(card);
-        if (handIndex >= 0)
-        {
-            context.State.Hand.RemoveAt(handIndex);
-        }
+        context.State.Hand.RemoveAt(index);
 
-        // Dodaj do żołądka
-        context.State.Stomach.Add(card);
-        context.Emit(new CardEatenEvent(card, card.Calories));
+        // Dodaj do żołądka (może wypchnąć najstarszą kartę)
+        var expelled = context.State.Stomach.Add(card);
+        context.Emit(new CardMovedEvent(card, ZoneType.Hand, ZoneType.Stomach));
+
+        // Jeśli żołądek był pełny, karta wypadła do kibelka
+        if (expelled != null)
+        {
+            context.State.Toilet.Add(expelled);
+            context.Emit(new CardDiscardedEvent(expelled, ZoneType.Stomach));
+        }
 
         return EffectResult.Done();
     }

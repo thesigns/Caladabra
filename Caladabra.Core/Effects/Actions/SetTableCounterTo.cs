@@ -14,21 +14,17 @@ public sealed class SetTableCounterTo : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
-        if (context.ChosenCard == null)
-        {
+        // Użyj indeksu zamiast referencji (po JSON restore referencje nie działają)
+        if (context.ChosenIndices == null || context.ChosenIndices.Length == 0)
             return EffectResult.Done();
-        }
 
-        var card = context.ChosenCard;
+        var index = context.ChosenIndices[0];
+        var entries = context.State.Table.Entries.ToList();
 
-        // Znajdź wpis na stole
-        var entry = context.State.Table.Entries
-            .FirstOrDefault(e => e.Card == card);
+        if (index < 0 || index >= entries.Count)
+            return EffectResult.Done();
 
-        if (entry != null)
-        {
-            entry.TurnsRemaining = _turns;
-        }
+        entries[index].TurnsRemaining = _turns;
 
         return EffectResult.Done();
     }

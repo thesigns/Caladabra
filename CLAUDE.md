@@ -189,15 +189,9 @@ Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania). Przydatne
 
 ## TODO / Niezaimplementowane
 
-### Brakujące Efekty Kart (mają TODO w CardDefinitions.cs)
+### Efekty Kart - WSZYSTKIE ZAIMPLEMENTOWANE ✅
 
-- `ReturnToPantryTop` - Diabelski bumerang
-- `AddChosenToHand` - Dostawa jedzenia, Grzebanie w kibelku
-- `MoveChosenToStomach` - Łapczywe jedzenie
-- ~~`TransformInto` - Kwantowa próżnia~~ → `TransformIntoChosen`
-- `SetTableCounterTo1` - Było i nie ma
-- ~~`ModifyDrawBehavior` - Jasnowidzenie~~ → `AddModifier(ExtraDrawThenDiscard)`
-- ~~`ModifyCaloriesOnDraw` - Dieta cud~~ → `AddModifier(ReduceCaloriesOnDraw)`
+Wszystkie 18 kart z prototypowej talii ma działające efekty.
 
 ### Inne
 
@@ -205,7 +199,9 @@ Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania). Przydatne
 - [x] ~~Serializacja GameState do JSON~~ - ZAIMPLEMENTOWANE
 - [x] ~~System modyfikatorów (efekty ciągłe)~~ - ZAIMPLEMENTOWANE
 - [x] ~~Custom deck z pliku JSON (--deck)~~ - ZAIMPLEMENTOWANE
-- [ ] Unit testy
+- [x] ~~Wszystkie efekty kart~~ - ZAIMPLEMENTOWANE
+- [ ] Unit testy (odłożone)
+- [ ] Balans kart
 - [ ] Faza 2: SFML.Net Desktop
 
 ## Testowanie Gry
