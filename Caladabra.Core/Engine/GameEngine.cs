@@ -241,6 +241,12 @@ public sealed class GameEngine
             ChosenIndices = indices
         };
 
+        // Ustaw ChosenCard jeśli wybrano dokładnie jedną opcję
+        if (indices.Length == 1 && indices[0] >= 0 && indices[0] < choice.Options.Count)
+        {
+            context.ChosenCard = choice.Options[indices[0]].Card;
+        }
+
         var result = continuation.Execute(context);
 
         if (result is EffectResult.NeedsChoiceResult needsChoice)
@@ -411,7 +417,8 @@ public sealed class GameEngine
                 Options = options,
                 Continuation = DiscardChosenFromHand.Instance,
                 SourceCard = State.ActiveModifiers
-                    .FirstOrDefault(m => m.Type == ModifierType.ExtraDrawThenDiscard)?.SourceCard
+                    .FirstOrDefault(m => m.Type == ModifierType.ExtraDrawThenDiscard)?.SourceCard,
+                EffectTrigger = "Discard" // Specjalny marker dla odtwarzania z JSON
             };
 
             State.Phase = GamePhase.AwaitingChoice;

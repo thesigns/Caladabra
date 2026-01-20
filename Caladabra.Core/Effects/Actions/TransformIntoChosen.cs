@@ -14,9 +14,9 @@ public sealed class TransformIntoChosen : IEffect
         if (context.ChosenCard == null || context.SourceCard == null)
             return EffectResult.Done();
 
-        // Znajdź indeks SourceCard w ręce
+        // Znajdź kartę źródłową w ręce po ID (referencja może być nieaktualna po załadowaniu z JSON)
         var hand = context.State.Hand;
-        var index = hand.Cards.ToList().IndexOf(context.SourceCard);
+        var index = hand.Cards.ToList().FindIndex(c => c.Id == context.SourceCard.Id);
         if (index < 0) return EffectResult.Done();
 
         // Zamień na sklonowaną wybraną kartę

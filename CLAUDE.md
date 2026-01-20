@@ -208,6 +208,117 @@ Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania). Przydatne
 - [ ] Unit testy
 - [ ] Faza 2: SFML.Net Desktop
 
+## Testowanie Gry
+
+### Tworzenie testowych talii (--deck)
+
+Użyj opcji `--deck` do załadowania własnej talii z pliku JSON:
+
+```bash
+dotnet run --project Caladabra.Console -- new --deck test_deck.json
+```
+
+**WAŻNE: Kolejność kart w JSON**
+- Karty są ładowane do Spiżarni metodą `AddToBottom`
+- Dobieranie (`Draw`) pobiera karty z góry stosu
+- **Ostatnie karty w JSON będą pierwszymi dobranym** (trafią na górę stosu)
+- **Pierwsze karty w JSON będą ostatnimi dobranym** (trafią na spód stosu)
+
+Przykład - chcesz zacząć z Jasnowidzeniem na ręce:
+```json
+[
+  "lizak_na_oslode",    // dobrana jako 9ta (na spodzie)
+  "lizak_na_oslode",    // dobrana jako 8ma
+  "baton_energetyczny", // dobrana jako 7ma
+  "baton_energetyczny", // dobrana jako 6ta
+  "hat_trick",          // dobrana jako 5ta
+  "hat_trick",          // na ręce (4ta)
+  "diabelski_bumerang", // na ręce (3cia)
+  "diabelski_bumerang", // na ręce (2ga)
+  "wilczy_glod",        // na ręce (1sza)
+  "jasnowidzenie"       // na ręce (ostatnia = 0)
+]
+```
+
+Ostatnie 5 kart (indeksy 5-9) trafia na rękę startową.
+
+### Typowe błędy z serializacją JSON
+
+**Problem: Porównywanie referencji po załadowaniu z JSON**
+
+Po zapisie/odczycie stanu gry z JSON, karty są klonowane z `CardRegistry`. Nie są to te same instancje obiektów!
+
+❌ **ŹLE** - nie zadziała po JSON restore:
+```csharp
+var index = hand.Cards.IndexOf(context.SourceCard);  // -1 bo różne instancje!
+hand.Cards.Contains(card)  // false!
+```
+
+✅ **DOBRZE** - używaj ID lub indeksów:
+```csharp
+var index = hand.Cards.ToList().FindIndex(c => c.Id == context.SourceCard.Id);
+context.ChosenIndices[0]  // użyj zapisanego indeksu
+```
+
+**Pliki które musiały być naprawione z tego powodu:**
+- `DiscardChosenFromHand.cs` - używa `context.ChosenIndices[0]` zamiast `ChosenCard`
+- `TransformIntoChosen.cs` - szuka po `c.Id == context.SourceCard.Id`
+
+### EffectTrigger dla PendingChoice
+
+Gdy tworzysz `PendingChoice`, **zawsze ustaw `EffectTrigger`**! Jest potrzebny do odtworzenia kontynuacji po JSON restore.
+
+Wartości w `JsonRunner.RestorePendingChoice`:
+- `"OnPlay"` → `sourceCard.OnPlay`
+- `"OnEat"` → `sourceCard.OnEat`
+- `"OnDraw"` → `sourceCard.OnDraw`
+- `"Discard"` → `DiscardChosenFromHand.Instance` (Jasnowidzenie)
+
+Jeśli `EffectTrigger` jest null/nieznany, domyślnie używa `OnPlay` - co może spowodować dziwne błędy!
+
+### Testowanie konkretnych mechanik
+
+#### Karty z modyfikatorami (Jasnowidzenie, Dieta cud)
+
+1. Zagraj kartę → trafia na Stół → `OnEnterTable` dodaje modyfikator
+2. Wykonaj akcję (Play/Eat) → `DrawCards` sprawdza `ActiveModifiers`
+3. Gdy karta schodzi ze Stołu → `OnLeaveTable` usuwa modyfikatory
+
+#### Kwantowa próżnia (OnDraw + transformacja)
+
+1. Dobierz Kwantową próżnię → `OnDraw` requestuje choice z CardList
+2. Wybierz kartę z listy → `TransformIntoChosen` zamienia kartę w ręce
+3. Nowa karta ma pełną funkcjonalność (można ją zagrać/zjeść normalnie)
+
+#### Karty na Stole z licznikiem
+
+1. `PlaceOnTable(3)` → karta trafia na Stół z licznikiem 3
+2. Co turę: `ProcessStartOfTurn()` zmniejsza licznik, wywołuje `OnTurnOnTable`
+3. Gdy licznik = 0: `OnTableCounterZero`, potem `OnLeaveTable`, potem do Kibelka
+
+### Przykładowe talie testowe
+
+Pliki w głównym katalogu projektu:
+
+| Plik | Testuje |
+|------|---------|
+| `test_jasnowidzenie.json` | ExtraDrawThenDiscard, odrzucanie kart |
+| `test_kwantowa_proznia.json` | OnDraw, transformacja, CardList choice |
+
+### Debugowanie
+
+1. **Sprawdź `State.Phase`** - jeśli gra czeka na choice a nie wiesz dlaczego
+2. **Sprawdź `State.PendingChoice.EffectTrigger`** - czy jest ustawiony poprawnie
+3. **Użyj `--state custom.json`** - żeby nie nadpisywać `game.json` podczas testów
+4. **Porównaj stan przed/po** - zapisz JSON, wykonaj akcję, porównaj zmiany
+
+### Częste pułapki
+
+- **Karta nie trafia do Kibelka** → może efekt przeniósł ją do innej strefy (Table, Pantry)
+- **Modyfikator nie działa** → sprawdź czy `OnEnterTable` dodaje i `OnLeaveTable` usuwa
+- **Choice nie działa po JSON restore** → sprawdź `EffectTrigger` i `RestorePendingChoice`
+- **Karta "znika"** → porównywanie referencji zamiast ID (patrz sekcja wyżej)
+
 ## Konwencje
 
 - Język kodu: angielski (nazwy klas, metod)

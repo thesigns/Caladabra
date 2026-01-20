@@ -14,15 +14,22 @@ public sealed class DiscardChosenFromHand : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
-        if (context.ChosenCard == null)
+        // Użyj indeksu żeby znaleźć faktyczną kartę w ręce
+        // (ChosenCard może być klonem z JSON, nie referencją do karty w Hand)
+        if (context.ChosenIndices == null || context.ChosenIndices.Length == 0)
+            return EffectResult.Done();
+
+        var index = context.ChosenIndices[0];
+        var card = context.State.Hand.GetAt(index);
+        if (card == null)
             return EffectResult.Done();
 
         // Usuń z ręki
-        context.State.Hand.Remove(context.ChosenCard);
+        context.State.Hand.RemoveAt(index);
 
         // Dodaj do kibelka
-        context.State.Toilet.Add(context.ChosenCard);
-        context.Emit(new CardDiscardedEvent(context.ChosenCard, ZoneType.Hand));
+        context.State.Toilet.Add(card);
+        context.Emit(new CardDiscardedEvent(card, ZoneType.Hand));
 
         return EffectResult.Done();
     }

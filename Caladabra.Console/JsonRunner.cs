@@ -406,6 +406,7 @@ public static class JsonRunner
                 "OnPlay" => sourceCard.OnPlay!,
                 "OnEat" => sourceCard.OnEat!,
                 "OnDraw" => sourceCard.OnDraw!,
+                "Discard" => DiscardChosenFromHand.Instance, // Jasnowidzenie - odrzucenie karty
                 _ => sourceCard.OnPlay!
             };
         }
