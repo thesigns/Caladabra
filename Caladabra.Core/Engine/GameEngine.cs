@@ -41,17 +41,48 @@ public sealed class GameEngine
             state.Pantry.Shuffle(random);
         }
 
-        // Dobierz początkową rękę
+        // NIE dobieraj kart tutaj - zrób to przez DrawInitialHand()
+        // Pozwala to na generowanie eventów i wywołanie OnDraw
+
+        return engine;
+    }
+
+    /// <summary>
+    /// Dobiera początkową rękę ze Spiżarni. Wywołuje OnDraw.
+    /// Zwraca eventy do animacji (CardDrawnEvent dla każdej karty).
+    /// </summary>
+    public List<IGameEvent> DrawInitialHand()
+    {
+        var events = new List<IGameEvent>();
+
         for (int i = 0; i < GameRules.StartingHandSize; i++)
         {
-            var card = state.Pantry.Draw();
-            if (card != null)
+            if (State.Hand.IsFull) break;
+
+            var card = State.Pantry.Draw();
+            if (card == null) break;
+
+            State.Hand.Add(card);
+            events.Add(new CardDrawnEvent(card));
+
+            // Wykonaj OnDraw
+            if (card.OnDraw != null)
             {
-                state.Hand.Add(card);
+                var context = CreateEffectContext(card, events);
+                var result = card.OnDraw.Execute(context);
+
+                if (result is EffectResult.NeedsChoiceResult needsChoice)
+                {
+                    State.Phase = GamePhase.AwaitingChoice;
+                    needsChoice.Choice.EffectTrigger = "OnDraw";
+                    State.PendingChoice = needsChoice.Choice;
+                    events.Add(new ChoiceRequestedEvent(needsChoice.Choice));
+                    break; // Gracz musi wybrać zanim dobierze więcej
+                }
             }
         }
 
-        return engine;
+        return events;
     }
 
     /// <summary>

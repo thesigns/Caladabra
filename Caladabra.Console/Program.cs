@@ -52,6 +52,7 @@ class Program
 
         var deck = DeckBuilder.BuildPrototypeDeck();
         var engine = GameEngine.NewGame(deck);
+        engine.DrawInitialHand();  // Dobierz początkową rękę (wywołuje OnDraw)
 
         // Główna pętla gry
         while (engine.State.Phase != GamePhase.Won && engine.State.Phase != GamePhase.Lost)
@@ -359,6 +360,7 @@ class Program
         System.Console.WriteLine($"Utworzono talię: {deck.Count} kart");
 
         var engine = GameEngine.NewGame(deck, seed: 42);
+        engine.DrawInitialHand();  // Dobierz początkową rękę (wywołuje OnDraw)
         System.Console.WriteLine($"Utworzono grę z ziarnem 42");
         System.Console.WriteLine();
 

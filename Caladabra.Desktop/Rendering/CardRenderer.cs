@@ -30,9 +30,9 @@ public sealed class CardRenderer
     // Proporcje fontów (jako ułamek wysokości karty)
     private const float FontStatRatio = 0.050f;
     private const float FontFlavorRatio = 0.041f;
-    private const float FontNameRatio = 0.059f;
-    private const float FontInstructionRatio = 0.045f;
-    private const float FontFlavorTextRatio = 0.041f;
+    private const float FontNameRatio = 0.050f;       // mniejsza nazwa
+    private const float FontInstructionRatio = 0.036f; // mniejsza instrukcja
+    private const float FontFlavorTextRatio = 0.028f;  // malutki flavor text
 
     public CardRenderer(Font font, ScaleManager scale)
     {
@@ -227,7 +227,7 @@ public sealed class CardRenderer
     private void DrawFlavorText(IRenderTarget target, string flavorText, Vector2f pos,
                                  float width, float height, float padding)
     {
-        float bottomOffset = height - height * (FlavorTextRatio - 0.02f);
+        float bottomOffset = height - height * (FlavorTextRatio - 0.06f);  // niżej
         float maxWidth = width - padding * 2;
         uint fontSize = (uint)(height * FontFlavorTextRatio);
 

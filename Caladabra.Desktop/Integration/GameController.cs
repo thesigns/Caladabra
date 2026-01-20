@@ -30,7 +30,13 @@ public sealed class GameController
     {
         var deck = DeckBuilder.BuildPrototypeDeck();
         var engine = GameEngine.NewGame(deck, seed);
-        return new GameController(engine);
+        var controller = new GameController(engine);
+
+        // Dobierz początkową rękę (z eventami dla animacji i OnDraw)
+        var initialEvents = engine.DrawInitialHand();
+        controller._pendingEvents.AddRange(initialEvents);
+
+        return controller;
     }
 
     /// <summary>

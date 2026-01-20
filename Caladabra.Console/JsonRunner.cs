@@ -48,6 +48,7 @@ public static class JsonRunner
         }
 
         var engine = GameEngine.NewGame(deck, seed, shouldShuffle);
+        engine.DrawInitialHand();  // Dobierz początkową rękę (wywołuje OnDraw)
 
         SaveState(engine.State, statePath);
         var message = deckPath != null
