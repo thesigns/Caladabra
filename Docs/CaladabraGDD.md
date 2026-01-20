@@ -420,15 +420,15 @@ Na rewersie karty widać tylko jej **Smak**.
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Wyprawa do toalety** | 4 | 1 | Po zagraniu tej karty redukujesz Tłuszcz o 6 i odrzucasz 1 dowolną kartę ze Stołu do Kibelka. *„To była dwójka."* |
-| **Wspinaczka na I piętro** | 6 | 2 | Po zagraniu tej karty redukujesz Tłuszcz o 7. Połóż tę kartę na stole na 3 tury. Jeśli usuniesz ją wcześniej ze stołu, redukujesz Tłuszcz dodatkowo o 7. *„Jeszcze trzeba zejść."* |
-| **Łowca dwóch smaków** | 5 | 1 | Po zagraniu policz wszystkie słodkie i kwaśne karty w Żołądku. Za każdą z nich redukujesz Tłuszcz o 5. Potem opróżniasz zawartość Żołądka do Kibelka. *„Życie jest słodko-kwaśne. A ja tylko dokładam porcje."* |
+| **Wyprawa do toalety** | 4 | 1 | Po zagraniu tej karty redukujesz Tłuszcz o 8 i odrzucasz 1 dowolną kartę ze Stołu do Kibelka. *„To była dwójka."* |
+| **Wspinaczka na I piętro** | 6 | 2 | Po zagraniu tej karty redukujesz Tłuszcz o 10. Połóż tę kartę na stole na 3 tury. Jeśli usuniesz ją wcześniej ze stołu, redukujesz Tłuszcz dodatkowo o 10. *„Jeszcze trzeba zejść."* |
+| **Łowca dwóch smaków** | 5 | 1 | Po zagraniu policz wszystkie słodkie i kwaśne karty w Żołądku. Za każdą z nich redukujesz Tłuszcz o 6. Potem opróżniasz zawartość Żołądka do Kibelka. *„Życie jest słodko-kwaśne. A ja tylko dokładam porcje."* |
 
 ### Karty Słodkie (Motywatory)
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Lizak na osłodę** | 1 | 0 | Po zagraniu tej karty za każdą gorzką kartę w Ręce, Żołądku i na Stole dostajesz 2 punkty SW. *„Czasem coś słodkiego pozwala zapomnieć o tym co gorzkie."* |
+| **Lizak na osłodę** | 1 | 0 | Po zagraniu tej karty za każdą gorzką kartę w Ręce, Żołądku i na Stole dostajesz 3 punkty SW. *„Czasem coś słodkiego pozwala zapomnieć o tym co gorzkie."* |
 | **Baton energetyczny** | 3 | 1 | Po zagraniu tej karty zyskujesz 10 SW. Połóż tę kartę na Stole. Po dwóch turach przenieś ją do Kibelka i tracisz 6 SW. *„Mózg pracuje na cukrze."* |
 | **Hat trick** | 4 | 0 | Po wzięciu tej karty do Ręki zyskujesz 3 SW. Po zagraniu tej karty połóż ją na Stole. Po 2 turach na Stole zyskujesz 3 SW. Po przeniesieniu tej karty do Kibelka zyskujesz 3 SW. *„Po takiej serii na pewno przytyję."* |
 
@@ -436,33 +436,33 @@ Na rewersie karty widać tylko jej **Smak**.
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Wilczy głód** | 3 | 6 | Po zagraniu tej karty nie ciągniesz karty ze Spiżarni (Ręka zmniejsza się o 1 kartę). *„Jak czegoś nie zjem, to chyba umrę."* |
-| **Diabelski bumerang** | 1 | 4 | Po zagraniu tej karty połóż tę kartę na Stół. Po 3 turach połóż ją z powrotem na wierzchu Spiżarni, tracisz wtedy 3 SW i zyskujesz 1 Tłuszczu. *„Czy to wraca karma?"* |
-| **Dostawa jedzenia** | 1 | 6 | Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni wybierz dowolną gorzką kartę z Listy Kart Caladabra i dodaj ją do Ręki oraz dodaj 1 Tłuszczu. *„Dostawcom chyba śnię się po nocach."* |
+| **Wilczy głód** | 3 | 5 | Po zagraniu tej karty nie ciągniesz karty ze Spiżarni (Ręka zmniejsza się o 1 kartę). *„Jak czegoś nie zjem, to chyba umrę."* |
+| **Diabelski bumerang** | 1 | 4 | Po zagraniu tej karty połóż tę kartę na Stół. Po 3 turach połóż ją z powrotem na wierzchu Spiżarni i tracisz 3 SW. *„Czy to wraca karma?"* |
+| **Dostawa jedzenia** | 1 | 5 | Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni wybierz dowolną gorzką kartę z Listy Kart Caladabra i dodaj ją do Ręki. *„Dostawcom chyba śnię się po nocach."* |
 
 ### Karty Ostre (Bomby)
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Łapczywe jedzenie** | 6 | 5 | Po zagraniu tej karty przenieś jedną wybraną kartę z Ręki do Żołądka i dobierz jeszcze jedną kartę. Zredukuj Tłuszcz o 2 jeśli karta przeniesiona była słona. *„Zjadłem zanim postawiłem na stole."* |
-| **Grzebanie w kibelku** | 8 | 4 | Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni, wybierz dowolną kartę z Kibelka i weź ją do Ręki. *„Coś mi tam wpadło."* |
-| **Jasnowidzenie** | 9 | 2 | Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni możesz wziąć jedną więcej - i jedną z nich odrzucasz. Po trzech turach usuń kartę ze stołu. *„Zobaczyłem przyszłość. Znowu byłem gruby."* |
+| **Łapczywe jedzenie** | 5 | 5 | Po zagraniu tej karty przenieś jedną wybraną kartę z Ręki do Żołądka i dobierz jeszcze jedną kartę. Zredukuj Tłuszcz o 3 jeśli karta przeniesiona była słona. *„Zjadłem zanim postawiłem na stole."* |
+| **Grzebanie w kibelku** | 6 | 4 | Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni, wybierz dowolną kartę z Kibelka i weź ją do Ręki. *„Coś mi tam wpadło."* |
+| **Jasnowidzenie** | 7 | 2 | Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni możesz wziąć jedną więcej - i jedną z nich odrzucasz. Po trzech turach usuń kartę ze stołu. *„Zobaczyłem przyszłość. Znowu byłem gruby."* |
 
 ### Karty Kwaśne (Receptury)
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Sos słodko-kwaśny** | 5 | 3 | Po zagraniu tej karty połóż ją na Stole na 3 tury. Przez 3 tury jeśli w Żołądku znajduje się karta o smaku słodkim i kwaśnym – zyskujesz 8 SW. W przeciwnym razie – tracisz 2 SW i zyskujesz 2 Tłuszczu. *„Idealne połączenie... albo kwaśny żart losu."* |
-| **Skutki dietetyczne** | 5 | 3 | Po zagraniu połóż tę kartę na Stole. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 4 Tłuszcze. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze. *„Różnorodność buduje... monotonia rujnuje."* |
-| **Świąteczne śniadanie** | 6 | 2 | Po zagraniu tej karty połóż ją na Stole. Po 2 turach: jeśli na Stole będą 3 różne Smaki, zyskujesz 8 SW i redukujesz 5 Tłuszczu. Jeśli nie — tracisz 5 SW. Tak czy inaczej usuń tę kartę ze Stołu. *„Czasem musisz poczekać, żeby zobaczyć, czy coś miało sens…"* |
+| **Sos słodko-kwaśny** | 5 | 3 | Po zagraniu tej karty połóż ją na Stole na 3 tury. Przez 3 tury jeśli w Żołądku znajduje się karta o smaku słodkim i kwaśnym – zyskujesz 8 SW i redukujesz 3 Tłuszczu. W przeciwnym razie – tracisz 2 SW i zyskujesz 2 Tłuszczu. *„Idealne połączenie... albo kwaśny żart losu."* |
+| **Skutki dietetyczne** | 5 | 3 | Po zagraniu połóż tę kartę na Stole. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 5 Tłuszczu. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze. *„Różnorodność buduje... monotonia rujnuje."* |
+| **Świąteczne śniadanie** | 6 | 2 | Po zagraniu tej karty połóż ją na Stole. Po 2 turach: jeśli na Stole będą 3 różne Smaki, zyskujesz 8 SW i redukujesz 7 Tłuszczu. Jeśli nie — tracisz 5 SW. Tak czy inaczej usuń tę kartę ze Stołu. *„Czasem musisz poczekać, żeby zobaczyć, czy coś miało sens…"* |
 
 ### Karty Umami (Mutacje)
 
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
-| **Kwantowa próżnia** | 8 | 3 | Po dobraniu tej karty do ręki wybierz jedną kartę z Listy Kart Caladabra. Kwantowa próżnia staje się tą kartą. *„Czasem nauka jest nieodróżnialna od magii."* |
+| **Kwantowa próżnia** | 6 | 3 | Po dobraniu tej karty do ręki wybierz jedną kartę z Listy Kart Caladabra. Kwantowa próżnia staje się tą kartą. *„Czasem nauka jest nieodróżnialna od magii."* |
 | **Było i nie ma** | 5 | 1 | Po zagraniu tej karty wybierz dowolną kartę na Stole. Zmieniasz instrukcję karty na „Usuń tę kartę ze stołu w następnej turze." *„Byłeś. Jesteś. Zaraz cię nie będzie."* |
-| **Dieta cud** | 7 | 2 | Połóż tę kartę na Stole na 3 tury. Dopóki karta leży na Stole wszystkie dobierane do Ręki mają Kaloryczność zmniejszoną trwale o 3 punkty. Po zejściu karty ze Stołu dodaj 6 Tłuszczu. *„Jak każda dieta, działa chwilę."* |
+| **Dieta cud** | 7 | 2 | Połóż tę kartę na Stole na 3 tury. Dopóki karta leży na Stole wszystkie dobierane do Ręki mają Kaloryczność zmniejszoną trwale o 3 punkty. Po zejściu karty ze Stołu dodaj 4 Tłuszczu. *„Jak każda dieta, działa chwilę."* |
 
 ---
 
