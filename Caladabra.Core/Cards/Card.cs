@@ -31,7 +31,7 @@ public sealed class Card
     public required int WillpowerCost { get; init; }
 
     /// <summary>Kaloryczność - ile Tłuszczu dodaje zjedzenie karty.</summary>
-    public required int Calories { get; init; }
+    public required int Calories { get; set; }
 
     // === Efekty - triggery ===
 

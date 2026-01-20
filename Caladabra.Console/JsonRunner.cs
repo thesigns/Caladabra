@@ -25,16 +25,35 @@ public static class JsonRunner
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public static void NewGame(string? statePath, int? seed)
+    public static void NewGame(string? statePath, int? seed, string? deckPath = null)
     {
         statePath ??= DefaultStatePath;
 
         CardDefinitions.RegisterAll();
-        var deck = DeckBuilder.BuildPrototypeDeck();
-        var engine = GameEngine.NewGame(deck, seed);
+
+        List<Card> deck;
+        bool shouldShuffle;
+
+        if (!string.IsNullOrEmpty(deckPath))
+        {
+            // Talia z pliku - bez tasowania (kolejność z pliku)
+            deck = DeckBuilder.BuildDeckFromFile(deckPath);
+            shouldShuffle = false;
+        }
+        else
+        {
+            // Standardowa talia - tasowanie
+            deck = DeckBuilder.BuildPrototypeDeck();
+            shouldShuffle = true;
+        }
+
+        var engine = GameEngine.NewGame(deck, seed, shouldShuffle);
 
         SaveState(engine.State, statePath);
-        OutputState(engine.State, "Nowa gra rozpoczęta.");
+        var message = deckPath != null
+            ? $"Nowa gra rozpoczęta z talią z pliku: {deckPath} ({deck.Count} kart)"
+            : "Nowa gra rozpoczęta.";
+        OutputState(engine.State, message);
     }
 
     public static void Status(string? statePath)
@@ -251,7 +270,13 @@ public static class JsonRunner
                 TurnsRemaining = e.TurnsRemaining
             }).ToList(),
             _stomachCards = state.Stomach.Cards.Select(c => c.Id).ToList(),
-            _toiletCards = state.Toilet.Cards.Select(c => c.Id).ToList()
+            _toiletCards = state.Toilet.Cards.Select(c => c.Id).ToList(),
+            _activeModifiers = state.ActiveModifiers.Select(m => new ActiveModifierDto
+            {
+                Type = m.Type.ToString(),
+                Value = m.Value,
+                SourceCardId = m.SourceCard.Id
+            }).ToList()
         };
     }
 
@@ -300,6 +325,22 @@ public static class JsonRunner
 
         // Załaduj CardList przez registry
         registry.PopulateCardList(state.CardList);
+
+        // Odtwórz ActiveModifiers
+        foreach (var modDto in dto._activeModifiers ?? [])
+        {
+            // Znajdź kartę źródłową na stole
+            var sourceCard = state.Table.Cards.FirstOrDefault(c => c.Id == modDto.SourceCardId);
+            if (sourceCard != null)
+            {
+                state.ActiveModifiers.Add(new ActiveModifier
+                {
+                    Type = Enum.Parse<ModifierType>(modDto.Type),
+                    Value = modDto.Value,
+                    SourceCard = sourceCard
+                });
+            }
+        }
 
         // Odtwórz PendingChoice jeśli istnieje
         if (dto.PendingChoice != null && state.Phase == GamePhase.AwaitingChoice)
@@ -443,6 +484,7 @@ public class GameStateDto
     public List<TableCardDto>? _tableCards { get; set; }
     public List<string>? _stomachCards { get; set; }
     public List<string>? _toiletCards { get; set; }
+    public List<ActiveModifierDto>? _activeModifiers { get; set; }
 }
 
 public class CardDto
@@ -501,4 +543,11 @@ public class ChoiceOptionDto
     public int Index { get; set; }
     public string DisplayText { get; set; } = "";
     public string? CardId { get; set; }
+}
+
+public class ActiveModifierDto
+{
+    public string Type { get; set; } = "";
+    public int Value { get; set; }
+    public string SourceCardId { get; set; } = "";
 }

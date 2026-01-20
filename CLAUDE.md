@@ -16,10 +16,13 @@ Caladabra/
 
 | Plik | Opis |
 |------|------|
-| `Core/Engine/GameEngine.cs` | Silnik gry - `Play()`, `Eat()`, `Choose()` |
+| `Core/Engine/GameEngine.cs` | Silnik gry - `Play()`, `Eat()`, `Choose()`, `DrawCards()` |
 | `Core/Engine/GameRules.cs` | Stałe (StartingFat=100, MaxWillpower=30, etc.) |
-| `Core/State/GameState.cs` | Pełny stan gry (Fat, Willpower, strefy) |
+| `Core/Engine/DeckBuilder.cs` | Budowanie talii (prototype, test, z pliku JSON) |
+| `Core/State/GameState.cs` | Pełny stan gry (Fat, Willpower, strefy, ActiveModifiers) |
 | `Core/State/PendingChoice.cs` | System decyzji gracza |
+| `Core/State/ModifierType.cs` | Typy modyfikatorów ciągłych |
+| `Core/State/ActiveModifier.cs` | Aktywny modyfikator (karta na stole) |
 | `Core/Cards/Definitions/CardDefinitions.cs` | Definicje wszystkich 18 kart |
 | `Core/Cards/CardRegistry.cs` | Singleton z rejestrem kart |
 | `Console/Program.cs` | Punkt wejścia, tryby: interactive, test, JSON |
@@ -59,14 +62,39 @@ OnTurnOnTable = new Conditional(
 | `ForEachCardInZone` | Iteruj po kartach w strefie |
 | `ChooseCardFromZone` | Wymagaj decyzji gracza |
 | `DiscardChosenCard` | Odrzuć wybraną kartę |
+| `DiscardChosenFromHand` | Odrzuć wybraną kartę z ręki (Jasnowidzenie) |
 | `EmptyStomachToToilet` | Opróżnij żołądek |
 | `SkipDraw` | Pomiń dobieranie karty |
+| `AddModifier(type, value)` | Dodaj modyfikator ciągły (patrz sekcja Modyfikatory) |
+| `RemoveModifiersFromSource` | Usuń modyfikatory karty źródłowej |
+| `TransformIntoChosen` | Zamień kartę w ręce na wybraną (Kwantowa próżnia) |
 
 ### Warunki (`Core/Effects/Conditions/`)
 
 - `HasFlavorInZone(zone, flavor)` - czy jest smak w strefie
 - `HasFlavorsInZone(zone, flavor1, flavor2)` - czy są OBA smaki
 - `CountUniqueFlavorsInZone(zone, minCount)` - ile różnych smaków
+
+### System Modyfikatorów (efekty ciągłe)
+
+Karty na Stole mogą mieć efekty ciągłe poprzez system modyfikatorów.
+
+```csharp
+// Core/State/ModifierType.cs
+public enum ModifierType
+{
+    ExtraDrawThenDiscard,   // Jasnowidzenie: +1 dobrana karta, potem wybór do odrzucenia
+    ReduceCaloriesOnDraw    // Dieta cud: -X kalorii na dobranych kartach
+}
+
+// Użycie w definicji karty
+OnEnterTable = new AddModifier(ModifierType.ExtraDrawThenDiscard, 1),
+OnLeaveTable = RemoveModifiersFromSource.Instance
+```
+
+**Pliki**: `Core/State/ModifierType.cs`, `Core/State/ActiveModifier.cs`
+
+Modyfikatory są przechowywane w `GameState.ActiveModifiers` i aplikowane w `GameEngine.DrawCards()`.
 
 ## System Decyzji (Choice)
 
@@ -90,7 +118,7 @@ public class Card {
     // Statystyki
     Flavor Flavor;             // Smak (archetyp)
     int WillpowerCost;         // Koszt SW
-    int Calories;              // Kaloryczność
+    int Calories;              // Kaloryczność (get/set - może być modyfikowana przez efekty)
 
     // Triggery (efekty)
     IEffect? OnPlay;           // Po zagraniu
@@ -126,7 +154,7 @@ dotnet run --project Caladabra.Console -- interactive
 dotnet run --project Caladabra.Console -- test
 
 # Tryb JSON (turn-by-turn, AI-friendly)
-dotnet run --project Caladabra.Console -- new [--seed N] [--state path]
+dotnet run --project Caladabra.Console -- new [--seed N] [--state path] [--deck plik.json]
 dotnet run --project Caladabra.Console -- status [--state path]
 dotnet run --project Caladabra.Console -- play N [--state path]
 dotnet run --project Caladabra.Console -- eat N [--state path]
@@ -135,6 +163,16 @@ dotnet run --project Caladabra.Console -- info <nazwa>
 ```
 
 Tryb JSON zapisuje stan gry do `game.json` (domyślnie) i zwraca JSON na stdout.
+
+### Opcja --deck (custom deck)
+
+Pozwala załadować talię z pliku JSON zamiast standardowej 60-kartowej:
+
+```json
+["jasnowidzenie", "diabelski_bumerang", "diabelski_bumerang", "lizak_na_oslode"]
+```
+
+Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania). Przydatne do testowania.
 
 ### Komendy w trybie interaktywnym
 
@@ -156,15 +194,17 @@ Tryb JSON zapisuje stan gry do `game.json` (domyślnie) i zwraca JSON na stdout.
 - `ReturnToPantryTop` - Diabelski bumerang
 - `AddChosenToHand` - Dostawa jedzenia, Grzebanie w kibelku
 - `MoveChosenToStomach` - Łapczywe jedzenie
-- `TransformInto` - Kwantowa próżnia
+- ~~`TransformInto` - Kwantowa próżnia~~ → `TransformIntoChosen`
 - `SetTableCounterTo1` - Było i nie ma
-- `ModifyDrawBehavior` - Jasnowidzenie
-- `ModifyCaloriesOnDraw` - Dieta cud
+- ~~`ModifyDrawBehavior` - Jasnowidzenie~~ → `AddModifier(ExtraDrawThenDiscard)`
+- ~~`ModifyCaloriesOnDraw` - Dieta cud~~ → `AddModifier(ReduceCaloriesOnDraw)`
 
 ### Inne
 
 - [x] ~~Turn-by-turn mode z JSON (JsonRunner)~~ - ZAIMPLEMENTOWANE
 - [x] ~~Serializacja GameState do JSON~~ - ZAIMPLEMENTOWANE
+- [x] ~~System modyfikatorów (efekty ciągłe)~~ - ZAIMPLEMENTOWANE
+- [x] ~~Custom deck z pliku JSON (--deck)~~ - ZAIMPLEMENTOWANE
 - [ ] Unit testy
 - [ ] Faza 2: SFML.Net Desktop
 

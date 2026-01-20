@@ -64,4 +64,23 @@ public sealed class Hand : IZone
     {
         _cards.Clear();
     }
+
+    /// <summary>
+    /// Zamienia kartę na podanym indeksie na nową kartę.
+    /// </summary>
+    public void ReplaceAt(int index, Card card)
+    {
+        if (index >= 0 && index < _cards.Count)
+        {
+            _cards[index] = card;
+        }
+    }
+
+    /// <summary>
+    /// Usuwa kartę z ręki.
+    /// </summary>
+    public bool Remove(Card card)
+    {
+        return _cards.Remove(card);
+    }
 }

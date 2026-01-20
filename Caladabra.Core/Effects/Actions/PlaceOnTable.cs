@@ -17,6 +17,12 @@ public sealed class PlaceOnTable(int turns) : IEffect
 
         context.Emit(new CardMovedEvent(card, ZoneType.Hand, ZoneType.Table));
 
+        // Wywołaj OnEnterTable
+        if (card.OnEnterTable != null)
+        {
+            card.OnEnterTable.Execute(context);
+        }
+
         // Jeśli stół był pełny, najstarsza karta trafia do kibelka
         if (removedCard != null)
         {

@@ -32,6 +32,11 @@ public sealed class GameState
     [JsonIgnore]
     public PendingChoice? PendingChoice { get; set; }
 
+    // === Modyfikatory ===
+
+    /// <summary>Aktywne modyfikatory (od kart na stole).</summary>
+    public List<ActiveModifier> ActiveModifiers { get; } = [];
+
     // === Strefy ===
 
     /// <summary>Lista Kart Caladabra - metastrefa ze wszystkimi kartami.</summary>

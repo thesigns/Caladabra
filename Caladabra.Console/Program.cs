@@ -270,7 +270,8 @@ class Program
 
             case "new":
                 var seed = GetArgInt(args, "--seed");
-                JsonRunner.NewGame(statePath, seed);
+                var deckPath = GetArg(args, "--deck");
+                JsonRunner.NewGame(statePath, seed, deckPath);
                 break;
 
             case "status":
@@ -320,7 +321,8 @@ class Program
                 System.Console.WriteLine("  test        - test inicjalizacji gry");
                 System.Console.WriteLine();
                 System.Console.WriteLine("JSON Runner (AI-friendly):");
-                System.Console.WriteLine("  new [--seed N]   - nowa gra");
+                System.Console.WriteLine("  new [--seed N] [--deck plik.json] - nowa gra");
+                System.Console.WriteLine("      --deck: talia z pliku JSON (tablica ID kart), bez tasowania");
                 System.Console.WriteLine("  status           - pokaż stan gry");
                 System.Console.WriteLine("  play N           - zagraj kartę N");
                 System.Console.WriteLine("  eat N            - zjedz kartę N");

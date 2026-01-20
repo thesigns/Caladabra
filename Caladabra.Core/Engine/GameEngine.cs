@@ -23,7 +23,7 @@ public sealed class GameEngine
     /// <summary>
     /// Tworzy nową grę z podaną talią.
     /// </summary>
-    public static GameEngine NewGame(List<Card> deck, int? seed = null)
+    public static GameEngine NewGame(List<Card> deck, int? seed = null, bool shouldShuffle = true)
     {
         var state = new GameState();
         var engine = new GameEngine(state);
@@ -34,9 +34,12 @@ public sealed class GameEngine
         // Załaduj talię do Spiżarni
         state.Pantry.AddToBottom(deck);
 
-        // Tasuj
-        var random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
-        state.Pantry.Shuffle(random);
+        // Tasuj (chyba że wyłączone - np. talia z pliku)
+        if (shouldShuffle)
+        {
+            var random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+            state.Pantry.Shuffle(random);
+        }
 
         // Dobierz początkową rękę
         for (int i = 0; i < GameRules.StartingHandSize; i++)
@@ -342,7 +345,19 @@ public sealed class GameEngine
 
     private void DrawCards(int count, List<IGameEvent> events)
     {
-        for (int i = 0; i < count; i++)
+        // Oblicz modyfikatory
+        int caloriesReduction = State.ActiveModifiers
+            .Where(m => m.Type == ModifierType.ReduceCaloriesOnDraw)
+            .Sum(m => m.Value);
+
+        int extraDraw = State.ActiveModifiers
+            .Where(m => m.Type == ModifierType.ExtraDrawThenDiscard)
+            .Sum(m => m.Value);
+
+        int totalToDraw = count + extraDraw;
+        int actuallyDrawn = 0;
+
+        for (int i = 0; i < totalToDraw; i++)
         {
             if (State.Hand.IsFull)
                 break;
@@ -351,15 +366,57 @@ public sealed class GameEngine
             if (card == null)
                 break;
 
+            // Zastosuj redukcję kalorii (trwale)
+            if (caloriesReduction > 0)
+            {
+                card.Calories = Math.Max(0, card.Calories - caloriesReduction);
+            }
+
             State.Hand.Add(card);
+            actuallyDrawn++;
             events.Add(new CardDrawnEvent(card));
 
             // Wykonaj OnDraw
             if (card.OnDraw != null)
             {
                 var context = CreateEffectContext(card, events);
-                card.OnDraw.Execute(context);
+                var result = card.OnDraw.Execute(context);
+
+                // Jeśli OnDraw wymaga wyboru (np. Kwantowa próżnia)
+                if (result is EffectResult.NeedsChoiceResult needsChoice)
+                {
+                    State.Phase = GamePhase.AwaitingChoice;
+                    needsChoice.Choice.EffectTrigger = "OnDraw";
+                    State.PendingChoice = needsChoice.Choice;
+                    events.Add(new ChoiceRequestedEvent(needsChoice.Choice));
+                    return; // Przerwij dobieranie, wróć po wyborze
+                }
             }
+        }
+
+        // Jeśli dobrano dodatkowe karty przez Jasnowidzenie - wymuś odrzucenie
+        if (extraDraw > 0 && actuallyDrawn > count)
+        {
+            var options = State.Hand.Cards.Select((c, idx) => new ChoiceOption
+            {
+                Index = idx,
+                Card = c,
+                DisplayText = c.ToString()
+            }).ToList();
+
+            var choice = new PendingChoice
+            {
+                Type = ChoiceType.DiscardFromHand,
+                Prompt = "Jasnowidzenie: wybierz kartę do odrzucenia:",
+                Options = options,
+                Continuation = DiscardChosenFromHand.Instance,
+                SourceCard = State.ActiveModifiers
+                    .FirstOrDefault(m => m.Type == ModifierType.ExtraDrawThenDiscard)?.SourceCard
+            };
+
+            State.Phase = GamePhase.AwaitingChoice;
+            State.PendingChoice = choice;
+            events.Add(new ChoiceRequestedEvent(choice));
         }
     }
 

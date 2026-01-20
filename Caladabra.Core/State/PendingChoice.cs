@@ -24,7 +24,10 @@ public enum ChoiceType
     SelectFromCardList,
 
     /// <summary>Wybór karty z Listy Kart Caladabra (tylko określony smak).</summary>
-    SelectFromCardListFiltered
+    SelectFromCardListFiltered,
+
+    /// <summary>Wybór karty do odrzucenia z ręki (Jasnowidzenie).</summary>
+    DiscardFromHand
 }
 
 /// <summary>

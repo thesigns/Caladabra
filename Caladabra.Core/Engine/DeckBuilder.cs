@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Caladabra.Core.Cards;
 
 namespace Caladabra.Core.Engine;
@@ -7,6 +8,28 @@ namespace Caladabra.Core.Engine;
 /// </summary>
 public static class DeckBuilder
 {
+    /// <summary>
+    /// Buduje talię z pliku JSON (tablica ID kart).
+    /// Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania).
+    /// </summary>
+    public static List<Card> BuildDeckFromFile(string path)
+    {
+        var registry = CardRegistry.Instance;
+        var deck = new List<Card>();
+
+        var json = File.ReadAllText(path);
+        var cardIds = JsonSerializer.Deserialize<List<string>>(json)
+            ?? throw new InvalidOperationException($"Nie można wczytać talii z pliku: {path}");
+
+        foreach (var id in cardIds)
+        {
+            var card = registry.CloneCard(id);
+            deck.Add(card);
+        }
+
+        return deck;
+    }
+
     /// <summary>
     /// Buduje prototypową talię 60 kart (z GDD).
     /// </summary>

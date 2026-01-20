@@ -1,6 +1,7 @@
 using Caladabra.Core.Effects;
 using Caladabra.Core.Effects.Actions;
 using Caladabra.Core.Effects.Conditions;
+using Caladabra.Core.State;
 using Caladabra.Core.Zones;
 
 namespace Caladabra.Core.Cards.Definitions;
@@ -284,8 +285,9 @@ public static class CardDefinitions
             Calories = 2,
             FlavorText = "Zobaczyłem przyszłość. Znowu byłem gruby.",
             Instruction = "Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni możesz wziąć jedną więcej - i jedną z nich odrzucasz. Po trzech turach usuń kartę ze stołu.",
-            OnPlay = new PlaceOnTable(3)
-            // TODO: ModifyDrawBehavior
+            OnPlay = new PlaceOnTable(3),
+            OnEnterTable = new AddModifier(ModifierType.ExtraDrawThenDiscard, 1),
+            OnLeaveTable = RemoveModifiersFromSource.Instance
         });
     }
 
@@ -379,8 +381,8 @@ public static class CardDefinitions
             Instruction = "Po dobraniu tej karty do ręki wybierz jedną kartę z Listy Kart Caladabra. Kwantowa próżnia staje się tą kartą.",
             OnDraw = new ChooseCardFromZone(
                 ZoneType.CardList,
-                "Wybierz kartę z Listy Kart Caladabra - Kwantowa próżnia stanie się tą kartą:"
-                // TODO: TransformInto
+                "Wybierz kartę z Listy Kart Caladabra - Kwantowa próżnia stanie się tą kartą:",
+                continuation: TransformIntoChosen.Instance
             )
         });
 
@@ -415,8 +417,11 @@ public static class CardDefinitions
             FlavorText = "Jak każda dieta, działa chwilę.",
             Instruction = "Połóż tę kartę na Stole na 3 tury. Dopóki karta leży na Stole wszystkie dobierane do Ręki mają Kaloryczność zmniejszoną trwale o 3 punkty. Po zejściu karty ze Stołu dodaj 6 Tłuszczu.",
             OnPlay = new PlaceOnTable(3),
-            OnLeaveTable = new GainFat(6)
-            // TODO: ModifyCaloriesOnDraw
+            OnEnterTable = new AddModifier(ModifierType.ReduceCaloriesOnDraw, 3),
+            OnLeaveTable = new Sequence(
+                RemoveModifiersFromSource.Instance,
+                new GainFat(6)
+            )
         });
     }
 }
