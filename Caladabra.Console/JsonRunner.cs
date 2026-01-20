@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Caladabra.Console.Rendering;
 using Caladabra.Core.Cards;
 using Caladabra.Core.Cards.Definitions;
+using Caladabra.Core.Effects;
 using Caladabra.Core.Effects.Actions;
 using Caladabra.Core.Engine;
 using Caladabra.Core.State;
@@ -233,7 +234,10 @@ public static class JsonRunner
                     CardId = o.Card.Id
                 }).ToList(),
                 ChoiceType = state.PendingChoice.Type.ToString(),
-                FlavorFilter = state.PendingChoice.FlavorFilter?.ToString()
+                FlavorFilter = state.PendingChoice.FlavorFilter?.ToString(),
+                SourceCardId = state.PendingChoice.SourceCard?.Id,
+                EffectTrigger = state.PendingChoice.EffectTrigger,
+                PlayedCardId = state.PendingChoice.PlayedCard?.Id
             } : null,
             GameOver = state.Phase == GamePhase.Won || state.Phase == GamePhase.Lost,
             Won = state.Phase == GamePhase.Won,
@@ -310,16 +314,6 @@ public static class JsonRunner
     {
         // Określ ZoneType z ChoiceType
         var choiceType = Enum.Parse<ChoiceType>(dto.ChoiceType ?? "SelectFromHand");
-        var zoneType = choiceType switch
-        {
-            ChoiceType.SelectFromHand => ZoneType.Hand,
-            ChoiceType.SelectFromTable => ZoneType.Table,
-            ChoiceType.SelectFromStomach => ZoneType.Stomach,
-            ChoiceType.SelectFromToilet => ZoneType.Toilet,
-            ChoiceType.SelectFromCardList => ZoneType.CardList,
-            ChoiceType.SelectFromCardListFiltered => ZoneType.CardList,
-            _ => ZoneType.Hand
-        };
 
         // Parsuj flavor filter
         Flavor? flavorFilter = null;
@@ -357,8 +351,45 @@ public static class JsonRunner
             };
         }).ToList();
 
-        // Stwórz efekt kontynuacji
-        var continuation = new ChooseCardFromZone(zoneType, dto.Prompt, flavorFilter);
+        // Odtwórz pełny efekt z karty źródłowej
+        IEffect continuation;
+        Card? sourceCard = null;
+
+        if (!string.IsNullOrEmpty(dto.SourceCardId))
+        {
+            sourceCard = registry.CloneCard(dto.SourceCardId);
+
+            // Użyj pełnego efektu karty jako kontynuacji
+            continuation = dto.EffectTrigger switch
+            {
+                "OnPlay" => sourceCard.OnPlay!,
+                "OnEat" => sourceCard.OnEat!,
+                "OnDraw" => sourceCard.OnDraw!,
+                _ => sourceCard.OnPlay!
+            };
+        }
+        else
+        {
+            // Fallback - stary sposób (tylko ChooseCardFromZone bez reszty efektu)
+            var zoneType = choiceType switch
+            {
+                ChoiceType.SelectFromHand => ZoneType.Hand,
+                ChoiceType.SelectFromTable => ZoneType.Table,
+                ChoiceType.SelectFromStomach => ZoneType.Stomach,
+                ChoiceType.SelectFromToilet => ZoneType.Toilet,
+                ChoiceType.SelectFromCardList => ZoneType.CardList,
+                ChoiceType.SelectFromCardListFiltered => ZoneType.CardList,
+                _ => ZoneType.Hand
+            };
+            continuation = new ChooseCardFromZone(zoneType, dto.Prompt, flavorFilter);
+        }
+
+        // Odtwórz PlayedCard jeśli istnieje
+        Card? playedCard = null;
+        if (!string.IsNullOrEmpty(dto.PlayedCardId))
+        {
+            playedCard = registry.CloneCard(dto.PlayedCardId);
+        }
 
         return new PendingChoice
         {
@@ -366,7 +397,10 @@ public static class JsonRunner
             Prompt = dto.Prompt,
             Options = options,
             FlavorFilter = flavorFilter,
-            Continuation = continuation
+            Continuation = continuation,
+            SourceCard = sourceCard,
+            EffectTrigger = dto.EffectTrigger,
+            PlayedCard = playedCard
         };
     }
 
@@ -455,6 +489,11 @@ public class PendingChoiceDto
     public string? ChoiceType { get; set; }
     public string? ZoneType { get; set; }
     public string? FlavorFilter { get; set; }
+
+    // Nowe pola do pełnego odtworzenia efektu
+    public string? SourceCardId { get; set; }
+    public string? EffectTrigger { get; set; } // "OnPlay", "OnEat", etc.
+    public string? PlayedCardId { get; set; }
 }
 
 public class ChoiceOptionDto

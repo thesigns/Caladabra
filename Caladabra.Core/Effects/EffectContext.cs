@@ -31,6 +31,12 @@ public sealed class EffectContext
     public Card? ChosenCard { get; set; }
 
     /// <summary>
+    /// Flaga sygnalizująca pominięcie dobierania karty na końcu tury.
+    /// Ustawiana przez SkipDraw.
+    /// </summary>
+    public bool ShouldSkipDraw { get; set; }
+
+    /// <summary>
     /// Emituje zdarzenie gry.
     /// </summary>
     public void Emit(IGameEvent gameEvent)

@@ -67,4 +67,13 @@ public sealed class PendingChoice
 
     /// <summary>Efekt kontynuacji po wyborze.</summary>
     public required IEffect Continuation { get; init; }
+
+    /// <summary>Karta źródłowa która wywołała ten wybór.</summary>
+    public Card? SourceCard { get; init; }
+
+    /// <summary>Który trigger wywołał efekt (np. "OnPlay", "OnEat").</summary>
+    public string? EffectTrigger { get; set; }
+
+    /// <summary>Karta która została zagrana (do dodania do Toilet po rozwiązaniu wyboru).</summary>
+    public Card? PlayedCard { get; set; }
 }

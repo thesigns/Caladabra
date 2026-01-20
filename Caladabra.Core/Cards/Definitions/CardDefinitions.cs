@@ -197,9 +197,9 @@ public static class CardDefinitions
             Instruction = "Po zagraniu tej karty połóż tę kartę na Stół. Po 3 turach połóż ją z powrotem na wierzchu Spiżarni, tracisz wtedy 3 SW i zyskujesz 1 Tłuszczu.",
             OnPlay = new PlaceOnTable(3),
             OnTableCounterZero = new Sequence(
+                ReturnToPantryTop.Instance,
                 new LoseWillpower(3),
                 new GainFat(1)
-                // TODO: ReturnToPantryTop
             )
         });
 
@@ -218,10 +218,11 @@ public static class CardDefinitions
                 new ChooseCardFromZone(
                     ZoneType.CardList,
                     "Wybierz gorzką kartę z Listy Kart Caladabra:",
-                    Flavor.Bitter
-                    // TODO: AddChosenToHand
+                    Flavor.Bitter,
+                    continuation: AddChosenToHand.Instance
                 ),
-                new GainFat(1)
+                new GainFat(1),
+                SkipDraw.Instance
             )
         });
     }
@@ -241,8 +242,13 @@ public static class CardDefinitions
             Instruction = "Po zagraniu tej karty przenieś jedną wybraną kartę z Ręki do Żołądka i dobierz jeszcze jedną kartę. Zredukuj Tłuszcz o 2 jeśli karta przeniesiona była słona.",
             OnPlay = new ChooseCardFromZone(
                 ZoneType.Hand,
-                "Wybierz kartę z Ręki do przeniesienia do Żołądka:"
-                // TODO: MoveChosenToStomach + conditional ReduceFat
+                "Wybierz kartę z Ręki do przeniesienia do Żołądka:",
+                continuation: new Sequence(
+                    MoveChosenToStomach.Instance,
+                    new IfChosenCardHasFlavor(Flavor.Salty, new ReduceFat(2)),
+                    DrawCard.Instance,
+                    SkipDraw.Instance  // Efekt sam dobiera, nie chcemy podwójnego dobierania
+                )
             )
         });
 
@@ -257,10 +263,13 @@ public static class CardDefinitions
             Calories = 4,
             FlavorText = "Coś mi tam wpadło.",
             Instruction = "Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni, wybierz dowolną kartę z Kibelka i weź ją do Ręki.",
-            OnPlay = new ChooseCardFromZone(
-                ZoneType.Toilet,
-                "Wybierz kartę z Kibelka do wzięcia do Ręki:"
-                // TODO: AddChosenToHand + SkipDraw
+            OnPlay = new Sequence(
+                new ChooseCardFromZone(
+                    ZoneType.Toilet,
+                    "Wybierz kartę z Kibelka do wzięcia do Ręki:",
+                    continuation: AddChosenToHand.FromToilet
+                ),
+                SkipDraw.Instance
             )
         });
 
@@ -388,8 +397,8 @@ public static class CardDefinitions
             Instruction = "Po zagraniu tej karty wybierz dowolną kartę na Stole. Zmieniasz instrukcję karty na: Usuń tę kartę ze stołu w następnej turze.",
             OnPlay = new ChooseCardFromZone(
                 ZoneType.Table,
-                "Wybierz kartę na Stole do usunięcia w następnej turze:"
-                // TODO: SetTableCounterTo1
+                "Wybierz kartę na Stole do usunięcia w następnej turze:",
+                continuation: new SetTableCounterTo(1)
             )
         });
 

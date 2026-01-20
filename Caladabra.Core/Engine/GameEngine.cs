@@ -106,6 +106,8 @@ public sealed class GameEngine
             if (result is EffectResult.NeedsChoiceResult needsChoice)
             {
                 State.Phase = GamePhase.AwaitingChoice;
+                needsChoice.Choice.EffectTrigger = "OnPlay";
+                needsChoice.Choice.PlayedCard = card;
                 State.PendingChoice = needsChoice.Choice;
                 events.Add(new ChoiceRequestedEvent(needsChoice.Choice));
                 return events;
@@ -182,6 +184,7 @@ public sealed class GameEngine
             if (result is EffectResult.NeedsChoiceResult needsChoice)
             {
                 State.Phase = GamePhase.AwaitingChoice;
+                needsChoice.Choice.EffectTrigger = "OnEat";
                 State.PendingChoice = needsChoice.Choice;
                 events.Add(new ChoiceRequestedEvent(needsChoice.Choice));
                 return events;
@@ -230,7 +233,7 @@ public sealed class GameEngine
         var context = new EffectContext
         {
             State = State,
-            SourceCard = choice.Options.First().Card, // Przybliżenie
+            SourceCard = choice.SourceCard ?? choice.Options.First().Card,
             Events = events,
             ChosenIndices = indices
         };
@@ -245,8 +248,18 @@ public sealed class GameEngine
             return events;
         }
 
-        // Dobierz kartę jeśli trzeba
-        if (State.Hand.Count < GameRules.MaxHandSize && State.Pantry.Count > 0)
+        // Jeśli to był OnPlay i karta nie trafiła na stół, idzie do kibelka
+        if (choice.EffectTrigger == "OnPlay" && choice.PlayedCard != null)
+        {
+            if (!State.Table.Cards.Contains(choice.PlayedCard))
+            {
+                State.Toilet.Add(choice.PlayedCard);
+                events.Add(new CardDiscardedEvent(choice.PlayedCard, ZoneType.Hand));
+            }
+        }
+
+        // Dobierz kartę jeśli efekt nie zawiera SkipDraw
+        if (!context.ShouldSkipDraw && State.Hand.Count < GameRules.MaxHandSize && State.Pantry.Count > 0)
         {
             DrawCards(1, events);
         }
@@ -304,8 +317,12 @@ public sealed class GameEngine
                 card.OnLeaveTable.Execute(context);
             }
 
-            State.Toilet.Add(card);
-            events.Add(new CardDiscardedEvent(card, ZoneType.Table));
+            // Dodaj do Kibelka tylko jeśli efekt nie przeniósł karty gdzie indziej
+            if (!State.Pantry.Cards.Contains(card) && !State.Hand.Cards.Contains(card))
+            {
+                State.Toilet.Add(card);
+                events.Add(new CardDiscardedEvent(card, ZoneType.Table));
+            }
         }
 
         return events;

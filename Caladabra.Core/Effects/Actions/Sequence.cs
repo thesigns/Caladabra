@@ -23,8 +23,7 @@ public sealed class Sequence : IEffect
 
             if (result is EffectResult.NeedsChoiceResult needsChoice)
             {
-                // Zapisz kontynuację - ten sam Sequence z przesuniętym indeksem
-                _currentIndex++;
+                // Nie przesuwaj indeksu - ten efekt musi być wykonany ponownie z ChosenIndices
                 return EffectResult.NeedsChoice(needsChoice.Choice, this);
             }
 

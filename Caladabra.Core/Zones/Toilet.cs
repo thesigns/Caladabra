@@ -44,6 +44,14 @@ public sealed class Toilet : IZone
     }
 
     /// <summary>
+    /// Usuwa konkretną kartę z kibelka.
+    /// </summary>
+    public bool Remove(Card card)
+    {
+        return _cards.Remove(card);
+    }
+
+    /// <summary>
     /// Wierzchnia karta (ostatnio dodana).
     /// </summary>
     public Card? TopCard => _cards.Count > 0 ? _cards[^1] : null;

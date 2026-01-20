@@ -67,7 +67,8 @@ public sealed class ChooseCardFromZone : IEffect
             Prompt = _prompt,
             Options = options,
             FlavorFilter = _flavorFilter,
-            Continuation = this
+            Continuation = this,
+            SourceCard = context.SourceCard
         };
 
         return EffectResult.NeedsChoice(choice, this);

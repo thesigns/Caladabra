@@ -12,7 +12,8 @@ public sealed class SkipDraw : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
-        // To jest tylko marker - silnik sprawdza czy efekt zawiera SkipDraw
+        // Ustaw flagę - silnik sprawdzi to przed dobieraniem karty
+        context.ShouldSkipDraw = true;
         return EffectResult.Done();
     }
 }
