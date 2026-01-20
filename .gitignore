@@ -8,5 +8,7 @@ riderModule.iml
 
 # Test files
 game.json
+balans.json
 test_*.json
+
 
