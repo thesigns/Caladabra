@@ -1,0 +1,50 @@
+PolyForm Noncommercial License 1.0.0
+
+Copyright (C) 2025-2026 Jakub W. Adamczyk
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software for any Noncommercial Purpose,
+subject to the following conditions:
+
+1. Noncommercial Purpose
+
+A "Noncommercial Purpose" is any purpose other than a Commercial Purpose.
+
+A "Commercial Purpose" is any purpose intended for or directed toward
+commercial advantage or monetary compensation.
+
+Examples of Noncommercial Purposes:
+- Personal learning and education
+- Academic research
+- Hobby projects
+- Contributing improvements back to this project
+
+Examples of Commercial Purposes:
+- Selling the Software or derivatives
+- Using the Software in a product or service you sell
+- Using the Software to provide paid services
+
+2. Notices
+
+You must retain all copyright and license notices in all copies or substantial
+portions of the Software.
+
+3. No Trademark Rights
+
+This license does not grant any rights in the trademarks, service marks, or
+logos of the Licensor.
+
+4. Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+For commercial licensing inquiries, please contact the copyright holder.
