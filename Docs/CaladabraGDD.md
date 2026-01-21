@@ -423,6 +423,8 @@ Na rewersie karty widać tylko jej **Smak**.
 | **Wyprawa do toalety** | 4 | 1 | Po zagraniu tej karty redukujesz Tłuszcz o 8 i odrzucasz 1 dowolną kartę ze Stołu do Kibelka. *„To była dwójka."* |
 | **Wspinaczka na I piętro** | 6 | 2 | Po zagraniu tej karty redukujesz Tłuszcz o 10. Połóż tę kartę na stole na 3 tury. Jeśli usuniesz ją wcześniej ze stołu, redukujesz Tłuszcz dodatkowo o 10. *„Jeszcze trzeba zejść."* |
 | **Łowca dwóch smaków** | 5 | 1 | Po zagraniu policz wszystkie słodkie i kwaśne karty w Żołądku. Za każdą z nich redukujesz Tłuszcz o 6. Potem opróżniasz zawartość Żołądka do Kibelka. *„Życie jest słodko-kwaśne. A ja tylko dokładam porcje."* |
+| **Trzydniowa głodówka** | 3 | 0 | Po zagraniu tej karty redukujesz Tłuszcz o 12. Po jej zjedzeniu opróżniasz cały żołądek do kibelka (włącznie z tą kartą). *„Znów ta wewnętrzna pustka."* |
+| **Maraton** | 4 | 1 | Po zagraniu tej karty zredukuj Tłuszcz o 1. Potem za każdą kartę Maraton, która jest w Kibelku, zredukuj Tłuszcz o kolejne 9. *„Najpierw rozgrzewka, potem maraton."* |
 
 ### Karty Słodkie (Motywatory)
 
@@ -472,21 +474,23 @@ Na rewersie karty widać tylko jej **Smak**.
 |------------------------|:------:|
 | Wyprawa do toalety     |   3    |
 | Wspinaczka na I piętro |   3    |
-| Łowca dwóch smaków     |   4    |
+| Łowca dwóch smaków     |   3    |
 | Lizak na osłodę        |   3    |
 | Baton energetyczny     |   3    |
-| Hat trick              |   4    |
+| Hat trick              |   3    |
 | Wilczy głód            |   3    |
 | Diabelski bumerang     |   3    |
-| Dostawa jedzenia       |   4    |
-| Łapczywe jedzenie      |   4    |
+| Dostawa jedzenia       |   3    |
+| Łapczywe jedzenie      |   3    |
 | Grzebanie w kibelku    |   3    |
 | Jasnowidzenie          |   3    |
-| Sos słodko-kwaśny      |   4    |
+| Sos słodko-kwaśny      |   3    |
 | Skutki dietetyczne     |   3    |
 | Świąteczne śniadanie   |   3    |
 | Kwantowa próżnia       |   3    |
 | Było i nie ma          |   3    |
-| Dieta cud              |   4    |
+| Dieta cud              |   3    |
+| Trzydniowa głodówka    |   3    |
+| Maraton                |   3    |
 | **Razem**              | **60** |
 

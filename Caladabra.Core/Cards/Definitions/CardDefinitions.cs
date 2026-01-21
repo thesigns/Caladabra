@@ -109,6 +109,39 @@ public static class CardDefinitions
                 EmptyStomachToToilet.Instance
             )
         });
+
+        // Trzydniowa głodówka - SW:3, Kal:0
+        // Po zagraniu: -12 Tłuszczu
+        // Po zjedzeniu: opróżnij żołądek do kibelka (włącznie z tą kartą)
+        registry.Register(new Card
+        {
+            Id = "trzydniowa_glodowka",
+            Name = "Trzydniowa głodówka",
+            Flavor = Flavor.Salty,
+            WillpowerCost = 3,
+            Calories = 0,
+            FlavorText = "Znów ta wewnętrzna pustka.",
+            Instruction = "Po zagraniu tej karty redukujesz Tłuszcz o 12. Po jej zjedzeniu opróżniasz cały żołądek do kibelka (włącznie z tą kartą).",
+            OnPlay = new ReduceFat(12),
+            OnEat = EmptyStomachToToilet.Instance
+        });
+
+        // Maraton - SW:4, Kal:1
+        // Po zagraniu: -1 Tłuszcz, potem -9 za każdy Maraton w Kibelku
+        registry.Register(new Card
+        {
+            Id = "maraton",
+            Name = "Maraton",
+            Flavor = Flavor.Salty,
+            WillpowerCost = 4,
+            Calories = 1,
+            FlavorText = "Najpierw rozgrzewka, potem maraton.",
+            Instruction = "Po zagraniu tej karty zredukuj Tłuszcz o 1. Potem za każdą kartę Maraton, która jest w Kibelku, zredukuj Tłuszcz o kolejne 9.",
+            OnPlay = new Sequence(
+                new ReduceFat(1),
+                new ForEachCardByIdInZone([ZoneType.Toilet], "maraton", new ReduceFat(9))
+            )
+        });
     }
 
     private static void RegisterSweetCards(CardRegistry registry)

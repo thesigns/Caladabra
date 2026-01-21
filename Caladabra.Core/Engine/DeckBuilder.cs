@@ -38,32 +38,41 @@ public static class DeckBuilder
         var registry = CardRegistry.Instance;
         var deck = new List<Card>();
 
-        // Skład z GDD:
+        // Skład z GDD: 20 typów × 3 kopie = 60 kart
+
+        // Słone (Spalacze)
         AddCopies(deck, registry, "wyprawa_do_toalety", 3);
         AddCopies(deck, registry, "wspinaczka_na_i_pietro", 3);
-        AddCopies(deck, registry, "lowca_dwoch_smakow", 4);
+        AddCopies(deck, registry, "lowca_dwoch_smakow", 3);
+        AddCopies(deck, registry, "trzydniowa_glodowka", 3);
+        AddCopies(deck, registry, "maraton", 3);
 
+        // Słodkie (Motywatory)
         AddCopies(deck, registry, "lizak_na_oslode", 3);
         AddCopies(deck, registry, "baton_energetyczny", 3);
-        AddCopies(deck, registry, "hat_trick", 4);
+        AddCopies(deck, registry, "hat_trick", 3);
 
+        // Gorzkie (Blokery)
         AddCopies(deck, registry, "wilczy_glod", 3);
         AddCopies(deck, registry, "diabelski_bumerang", 3);
-        AddCopies(deck, registry, "dostawa_jedzenia", 4);
+        AddCopies(deck, registry, "dostawa_jedzenia", 3);
 
-        AddCopies(deck, registry, "lapczywe_jedzenie", 4);
+        // Ostre (Bomby)
+        AddCopies(deck, registry, "lapczywe_jedzenie", 3);
         AddCopies(deck, registry, "grzebanie_w_kibelku", 3);
         AddCopies(deck, registry, "jasnowidzenie", 3);
 
-        AddCopies(deck, registry, "sos_slodko_kwasny", 4);
+        // Kwaśne (Receptury)
+        AddCopies(deck, registry, "sos_slodko_kwasny", 3);
         AddCopies(deck, registry, "skutki_dietetyczne", 3);
         AddCopies(deck, registry, "swiateczne_sniadanie", 3);
 
+        // Umami (Mutacje)
         AddCopies(deck, registry, "kwantowa_proznia", 3);
         AddCopies(deck, registry, "bylo_i_nie_ma", 3);
-        AddCopies(deck, registry, "dieta_cud", 4);
+        AddCopies(deck, registry, "dieta_cud", 3);
 
-        return deck; // 60 kart
+        return deck; // 60 kart (20 × 3)
     }
 
     /// <summary>

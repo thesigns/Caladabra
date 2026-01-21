@@ -65,6 +65,7 @@ public sealed class Game
         _window.MouseButtonReleased += OnMouseButtonReleased;
         _window.MouseMoved += OnMouseMoved;
         _window.MouseWheelScrolled += OnMouseWheelScrolled;
+        _window.TextEntered += OnTextEntered;
     }
 
     private void OnWindowClosed(object? sender, EventArgs e)
@@ -131,6 +132,19 @@ public sealed class Game
         _sceneManager.HandleEvent(sfmlEvent);
     }
 
+    private void OnTextEntered(object? sender, TextEventArgs e)
+    {
+        // e.Unicode is a string in SFML.Net, convert first char to uint
+        if (string.IsNullOrEmpty(e.Unicode)) return;
+
+        var sfmlEvent = new Event
+        {
+            Type = EventType.TextEntered,
+            Text = new TextEvent { Unicode = e.Unicode[0] }
+        };
+        _sceneManager.HandleEvent(sfmlEvent);
+    }
+
     private void Update(float deltaTime)
     {
         _sceneManager.Update(deltaTime);
@@ -166,6 +180,7 @@ public sealed class Game
         _window.MouseButtonReleased -= OnMouseButtonReleased;
         _window.MouseMoved -= OnMouseMoved;
         _window.MouseWheelScrolled -= OnMouseWheelScrolled;
+        _window.TextEntered -= OnTextEntered;
         _window.Close();
         _window.Dispose();
 

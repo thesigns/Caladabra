@@ -17,6 +17,7 @@ public sealed class MainMenuScene : IScene
     private Text _versionText = null!;
 
     private Button _newGameButton = null!;
+    private Button _newGameSeedButton = null!;
     private Button _continueButton = null!;
     private Button _optionsButton = null!;
     private Button _exitButton = null!;
@@ -67,6 +68,11 @@ public sealed class MainMenuScene : IScene
             OnClick = OnNewGame
         };
 
+        _newGameSeedButton = new Button(font, scale, "Nowa Gra (Ziarno)", new Vector2f(0, 0), buttonSize)
+        {
+            OnClick = OnNewGameSeed
+        };
+
         _continueButton = new Button(font, scale, "Kontynuuj", new Vector2f(0, 0), buttonSize)
         {
             OnClick = OnContinue,
@@ -83,7 +89,7 @@ public sealed class MainMenuScene : IScene
             OnClick = OnExit
         };
 
-        _buttons = [_newGameButton, _continueButton, _optionsButton, _exitButton];
+        _buttons = [_newGameButton, _newGameSeedButton, _continueButton, _optionsButton, _exitButton];
 
         UpdateLayout();
     }
@@ -208,6 +214,11 @@ public sealed class MainMenuScene : IScene
     {
         var gameController = GameController.NewGame();
         _game.SceneManager.ReplaceScene(new GameScene(_game, gameController));
+    }
+
+    private void OnNewGameSeed()
+    {
+        _game.SceneManager.PushScene(new EnterSeedScene(_game));
     }
 
     private void OnContinue()
