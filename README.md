@@ -37,8 +37,8 @@ Playing cards costs Willpower. To regain Willpower, you must eat. But eating add
 | **Fat** | 100 | Get to 0 to win |
 | **Willpower** | 12 | Spend to play cards, recover by eating |
 
-- **Win:** Reduce Fat to 0
-- **Lose:** Run out of cards in hand with no way to draw more
+- **Win:** Reduce Fat to 0 within 30 turns
+- **Lose:** Run out of cards OR exceed 30 turns with Fat > 0
 
 ---
 
@@ -65,10 +65,13 @@ Work in progress. Playable in **Desktop** (SFML.Net) and **Console** modes.
 ```bash
 dotnet run --project Caladabra.Desktop
 ```
-- Full graphical interface
+- Full graphical interface with card textures
 - Card preview on hover
 - LPM = play card, PPM = eat card
 - CardList browser with scrolling
+- Zone pickers (Toilet, Pantry selection)
+- Custom seed input for reproducible games
+- Options menu with resolution settings
 
 ### Console
 ```bash

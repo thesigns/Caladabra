@@ -8,7 +8,7 @@
 Caladabra/
 ├── Caladabra.Core/          # Logika gry (biblioteka)
 ├── Caladabra.Console/       # Aplikacja konsolowa
-├── Caladabra.Desktop/       # SFML.Net (Faza 2 - niezaimplementowane)
+├── Caladabra.Desktop/       # Aplikacja graficzna SFML.Net
 └── Docs/CaladabraGDD.md     # Game Design Document
 ```
 
@@ -17,7 +17,7 @@ Caladabra/
 | Plik | Opis |
 |------|------|
 | `Core/Engine/GameEngine.cs` | Silnik gry - `Play()`, `Eat()`, `Choose()`, `DrawCards()` |
-| `Core/Engine/GameRules.cs` | Stałe (StartingFat=100, MaxWillpower=30, etc.) |
+| `Core/Engine/GameRules.cs` | Stałe (StartingFat=100, MaxWillpower=30, MaxTurns=30) |
 | `Core/Engine/DeckBuilder.cs` | Budowanie talii (prototype, test, z pliku JSON) |
 | `Core/State/GameState.cs` | Pełny stan gry (Fat, Willpower, strefy, ActiveModifiers) |
 | `Core/State/PendingChoice.cs` | System decyzji gracza |
@@ -27,6 +27,10 @@ Caladabra/
 | `Core/Cards/CardRegistry.cs` | Singleton z rejestrem kart |
 | `Console/Program.cs` | Punkt wejścia, tryby: interactive, test, JSON |
 | `Console/JsonRunner.cs` | Runner JSON dla trybu turn-by-turn (AI-friendly) |
+| `Desktop/Scenes/GameScene.cs` | Główna scena rozgrywki |
+| `Desktop/Scenes/CardListScene.cs` | Overlay z listą kart (browser/picker) |
+| `Desktop/Rendering/CardRenderer.cs` | Renderowanie kart (tekstury, tryby) |
+| `Desktop/Integration/GameController.cs` | Wrapper na GameEngine dla UI |
 
 ## Architektura Efektów Kart
 
@@ -147,6 +151,9 @@ Eventy służą do animacji w SFML (Faza 2).
 ## Uruchamianie
 
 ```bash
+# Desktop (graficzny interfejs - zalecane)
+dotnet run --project Caladabra.Desktop
+
 # Tryb interaktywny (gra w konsoli)
 dotnet run --project Caladabra.Console -- interactive
 
@@ -200,9 +207,9 @@ Wszystkie 18 kart z prototypowej talii ma działające efekty.
 - [x] ~~System modyfikatorów (efekty ciągłe)~~ - ZAIMPLEMENTOWANE
 - [x] ~~Custom deck z pliku JSON (--deck)~~ - ZAIMPLEMENTOWANE
 - [x] ~~Wszystkie efekty kart~~ - ZAIMPLEMENTOWANE
+- [x] ~~Faza 2: SFML.Net Desktop~~ - ZAIMPLEMENTOWANE
 - [ ] Unit testy (odłożone)
 - [ ] Balans kart
-- [ ] Faza 2: SFML.Net Desktop
 
 ## Testowanie Gry
 

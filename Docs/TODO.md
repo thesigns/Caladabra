@@ -1,7 +1,7 @@
 # Caladabra - Lista TODO
 
 > Plik dla kontynuacji pracy w kolejnych sesjach.
-> Ostatnia aktualizacja: 2026-01-22
+> Ostatnia aktualizacja: 2026-01-21
 
 ---
 
@@ -58,6 +58,26 @@
 - [x] Trzydniowa głodówka (Słona, SW:3, Kal:0)
 - [x] Maraton (Słona, SW:4, Kal:1)
 - [x] Talia: 20 typów × 3 kopie = 60 kart
+
+#### Grafika Kart (2026-01-21)
+- [x] Bitmapy kart: Assets/Cards/Fronts/, Backs/, Icons/
+- [x] CardRenderer z teksturami (nie generowane programowo)
+- [x] Ikony smaków w trybie Tiny (Żołądek) i w sekcji ilustracji
+- [x] FlavorColors - tekst zawsze czarny (niezależnie od tła)
+
+#### Balans i Zasady (2026-01-21)
+- [x] Limit 30 tur (`GameRules.MaxTurns = 30`)
+- [x] Komunikaty przegranej rozróżniają powód (karty vs limit tur)
+- [x] Blokada interakcji po zakończeniu gry (IsGameOver check)
+
+#### Zone Pickers (2026-01-21)
+- [x] `SelectFromPantry` ChoiceType
+- [x] CardListScene obsługuje wybór z Toilet/Pantry (auto-open overlay)
+- [x] CustomTitle w CardListScene ("Wybierz z Kibelka", "Wybierz ze Spiżarni")
+
+#### Poprawki (2026-01-21)
+- [x] Naprawiony crash przy zmianie rozdzielczości (deferred window recreation)
+- [x] Karty na Stole przesunięte niżej o 1/2 wysokości
 
 ---
 
@@ -138,8 +158,9 @@
 
 ### Grafika (Priorytet: Niski)
 
-- [ ] Ilustracje kart (czarno-białe, styl komiksowy)
-- [ ] Ikonki smaków
+- [x] ~~Tekstury kart~~ - Assets/Cards/{Fronts,Backs,Icons}/
+- [x] ~~Ikonki smaków~~ - icon_{flavor}.png (256×256)
+- [ ] Ilustracje kart (czarno-białe, styl komiksowy) - obecnie placeholder ikony
 - [ ] Logo gry
 - [ ] Tło menu
 - [ ] Efekty wizualne (particle effects dla spalania tłuszczu?)
@@ -203,6 +224,17 @@ dotnet run --project Caladabra.Console -- new --deck test_deck.json
 ---
 
 ## Changelog (Ostatnia Sesja)
+
+### 2026-01-21 (sesja 4)
+- Limit 30 tur - `GameRules.MaxTurns = 30`, komunikaty przegranej, "Tura: X/30" w UI
+- Bitmapy kart - tekstury PNG dla frontów, rewersów i ikon smaków
+- CardRenderer zintegrowany z AssetManager (tekstury zamiast rysowania programowego)
+- Ikony smaków w trybie Tiny (żołądek) i w sekcji ilustracji (zamiast TopBar)
+- FlavorColors.GetText() zawsze zwraca czarny (czytelność na jasnych tłach)
+- Naprawiony crash przy zmianie rozdzielczości (deferred resolution change)
+- Zone pickers: SelectFromPantry, CardListScene dla Toilet/Pantry z CustomTitle
+- Karty na Stole przesunięte niżej o 1/2 wysokości karty
+- Aktualizacja dokumentacji (CLAUDE.md, README.md, TODO.md)
 
 ### 2026-01-22 (sesja 3)
 - Dodany seed do GameState i wyświetlanie pod Spiżarnią
