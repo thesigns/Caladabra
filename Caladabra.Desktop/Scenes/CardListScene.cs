@@ -120,7 +120,7 @@ public sealed class CardListScene : IScene
 
     public void Enter()
     {
-        _cardRenderer = new CardRenderer(_game.Assets.DefaultFont, _game.Scale);
+        _cardRenderer = new CardRenderer(_game.Assets.DefaultFont, _game.Scale, _game.Assets);
         CalculateLayout();
     }
 

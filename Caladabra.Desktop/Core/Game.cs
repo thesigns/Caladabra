@@ -15,6 +15,11 @@ public sealed class Game
     private readonly GameSettings _settings;
     private readonly Clock _clock = new();
 
+    // Pending resolution change (applied at end of game loop to avoid disposed window issues)
+    private bool _pendingResolutionChange;
+    private uint _pendingWidth, _pendingHeight;
+    private bool _pendingFullscreen;
+
     public SceneManager SceneManager => _sceneManager;
     public AssetManager Assets => _assets;
     public ScaleManager Scale => _scale;
@@ -42,6 +47,7 @@ public sealed class Game
             _window.DispatchEvents();
             Update(deltaTime);
             Render();
+            ApplyPendingResolution();
         }
 
         Cleanup();
@@ -166,9 +172,21 @@ public sealed class Game
 
     public void ApplyResolution(uint width, uint height, bool fullscreen)
     {
-        _settings.ScreenWidth = width;
-        _settings.ScreenHeight = height;
-        _settings.Fullscreen = fullscreen;
+        // Schedule resolution change for end of game loop (avoid disposed window in DispatchEvents)
+        _pendingWidth = width;
+        _pendingHeight = height;
+        _pendingFullscreen = fullscreen;
+        _pendingResolutionChange = true;
+    }
+
+    private void ApplyPendingResolution()
+    {
+        if (!_pendingResolutionChange) return;
+        _pendingResolutionChange = false;
+
+        _settings.ScreenWidth = _pendingWidth;
+        _settings.ScreenHeight = _pendingHeight;
+        _settings.Fullscreen = _pendingFullscreen;
         _settings.Save();
 
         // Close current window and recreate
@@ -185,6 +203,6 @@ public sealed class Game
         _window.Dispose();
 
         InitializeWindow();
-        _scale.UpdateScale(width, height);
+        _scale.UpdateScale(_pendingWidth, _pendingHeight);
     }
 }

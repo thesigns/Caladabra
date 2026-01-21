@@ -28,10 +28,8 @@ public static class FlavorColors
 
     public static Color GetText(Flavor flavor)
     {
-        // Use dark text on light backgrounds, light text on dark backgrounds
-        var bg = GetBackground(flavor);
-        var brightness = (bg.R + bg.G + bg.B) / 3;
-        return brightness > 140 ? Color.Black : Color.White;
+        // Wszystkie teksty na kartach są czarne (tła z bitmap są jasne)
+        return Color.Black;
     }
 
     public static Color GetHighlight(Flavor flavor)

@@ -10,6 +10,7 @@ public sealed class CardRenderer
 {
     private readonly Font _font;
     private readonly ScaleManager _scale;
+    private readonly AssetManager _assets;
 
     // Proporcje karty (aspect ratio) - szerokość / wysokość
     public const float AspectRatio = 13f / 18f;  // ≈ 0.722
@@ -34,10 +35,11 @@ public sealed class CardRenderer
     private const float FontInstructionRatio = 0.036f; // mniejsza instrukcja
     private const float FontFlavorTextRatio = 0.028f;  // malutki flavor text
 
-    public CardRenderer(Font font, ScaleManager scale)
+    public CardRenderer(Font font, ScaleManager scale, AssetManager assets)
     {
         _font = font;
         _scale = scale;
+        _assets = assets;
     }
 
     /// <summary>
@@ -59,19 +61,27 @@ public sealed class CardRenderer
         float borderWidth = height * BorderRatio;
         float padding = height * PaddingRatio;
 
-        // Tryb Back - rewers karty
+        // Tryb Back - rewers karty (tekstura + ikona)
         if (mode == CardDisplayMode.Back)
         {
-            DrawCardBackground(target, position, width, height, card.Flavor, borderWidth);
             DrawCardBack(target, position, width, height, card.Flavor, padding);
             return;
         }
 
-        // Tryb Tiny - tylko kolor smaku
+        // Tryb Tiny - tło + ikona smaku na środku
         if (mode == CardDisplayMode.Tiny)
         {
             DrawCardBackground(target, position, width, height, card.Flavor, borderWidth);
-            // W przyszłości można dodać ikonkę smaku
+
+            // Ikona smaku na środku (50% wysokości karty)
+            var icon = _assets.GetFlavorIcon(card.Flavor);
+            var iconSize = height * 0.5f;
+            var iconSprite = new Sprite(icon)
+            {
+                Position = position + new Vector2f((width - iconSize) / 2, (height - iconSize) / 2),
+                Scale = new Vector2f(iconSize / icon.Size.X, iconSize / icon.Size.Y)
+            };
+            target.Draw(iconSprite);
             return;
         }
 
@@ -79,6 +89,7 @@ public sealed class CardRenderer
         DrawCardBackground(target, position, width, height, card.Flavor, borderWidth);
         DrawTopBar(target, card, position, width, height, padding);
         DrawName(target, card.Name, position, width, height);
+        DrawIllustration(target, card.Flavor, position, width, height);
 
         // Tryb Full - dodaj instrukcję i flavor text
         if (mode == CardDisplayMode.Full)
@@ -92,58 +103,55 @@ public sealed class CardRenderer
         }
     }
 
+    private void DrawIllustration(IRenderTarget target, Flavor flavor, Vector2f pos, float width, float height)
+    {
+        // Ikona smaku w miejscu ilustracji (dopóki nie ma prawdziwych ilustracji)
+        float topOffset = height * (TopBarRatio + NameRatio);
+        float illustrationHeight = height * IllustrationRatio;
+
+        var icon = _assets.GetFlavorIcon(flavor);
+        var iconSize = illustrationHeight * 0.7f;
+        var iconSprite = new Sprite(icon)
+        {
+            Position = pos + new Vector2f((width - iconSize) / 2, topOffset + (illustrationHeight - iconSize) / 2),
+            Scale = new Vector2f(iconSize / icon.Size.X, iconSize / icon.Size.Y)
+        };
+        target.Draw(iconSprite);
+    }
+
     private void DrawCardBackground(IRenderTarget target, Vector2f pos, float width, float height,
                                      Flavor flavor, float borderWidth)
     {
-        var bgColor = FlavorColors.GetBackground(flavor);
-        var borderColor = FlavorColors.GetBorder(flavor);
-
-        // Ramka (większy prostokąt)
-        var borderRect = new RectangleShape(new Vector2f(width, height))
+        var texture = _assets.GetCardFront(flavor);
+        var sprite = new Sprite(texture)
         {
             Position = pos,
-            FillColor = borderColor
+            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y)
         };
-        target.Draw(borderRect);
-
-        // Tło wewnętrzne
-        var bgRect = new RectangleShape(new Vector2f(width - borderWidth * 2, height - borderWidth * 2))
-        {
-            Position = pos + new Vector2f(borderWidth, borderWidth),
-            FillColor = bgColor
-        };
-        target.Draw(bgRect);
+        target.Draw(sprite);
     }
 
     private void DrawCardBack(IRenderTarget target, Vector2f pos, float width, float height,
                                Flavor flavor, float padding)
     {
-        var borderColor = FlavorColors.GetBorder(flavor);
-        var bgColor = FlavorColors.GetBackground(flavor);
-        float innerPadding = padding * 2;
-
-        // Wewnętrzny prostokąt (wzór rewersu)
-        var innerRect = new RectangleShape(new Vector2f(width - innerPadding * 2, height - innerPadding * 2))
+        // Tło rewersu z tekstury
+        var texture = _assets.GetCardBack(flavor);
+        var sprite = new Sprite(texture)
         {
-            Position = pos + new Vector2f(innerPadding, innerPadding),
-            FillColor = borderColor,
-            OutlineColor = bgColor,
-            OutlineThickness = height * 0.009f
+            Position = pos,
+            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y)
         };
-        target.Draw(innerRect);
+        target.Draw(sprite);
 
-        // Znak "C" na środku
-        uint centerFontSize = (uint)(height * 0.18f);
-        var centerText = new Text(_font, "C", centerFontSize)
+        // Ikona smaku na środku (40% wysokości karty)
+        var icon = _assets.GetFlavorIcon(flavor);
+        var iconSize = height * 0.4f;
+        var iconSprite = new Sprite(icon)
         {
-            FillColor = bgColor
+            Position = pos + new Vector2f((width - iconSize) / 2, (height - iconSize) / 2),
+            Scale = new Vector2f(iconSize / icon.Size.X, iconSize / icon.Size.Y)
         };
-        var bounds = centerText.GetLocalBounds();
-        centerText.Position = new Vector2f(
-            pos.X + (width - bounds.Size.X) / 2,
-            pos.Y + (height - bounds.Size.Y) / 2 - height * 0.045f
-        );
-        target.Draw(centerText);
+        target.Draw(iconSprite);
     }
 
     private void DrawTopBar(IRenderTarget target, Card card, Vector2f pos, float width, float height, float padding)

@@ -70,7 +70,7 @@ public sealed class GameScene : IScene
     {
         var font = _game.Assets.DefaultFont;
 
-        _cardRenderer = new CardRenderer(font, _game.Scale);
+        _cardRenderer = new CardRenderer(font, _game.Scale, _game.Assets);
         _zoneRenderer = new ZoneRenderer(_cardRenderer, font, _game.Scale);
 
         // Status bar labels
@@ -317,7 +317,7 @@ public sealed class GameScene : IScene
 
         float centerX = _game.Scale.CurrentWidth / 2;
         float startX = centerX - totalWidth / 2;
-        float y = _game.Scale.S(StatusTextHeight + 100f);
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
 
         for (int i = 0; i < cards.Count; i++)
         {
@@ -382,7 +382,7 @@ public sealed class GameScene : IScene
 
                     float centerX = _game.Scale.CurrentWidth / 2;
                     float startX = centerX - totalWidth / 2;
-                    float y = _game.Scale.S(StatusTextHeight + 100f);
+                    float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
 
                     for (int i = 0; i < choice.Options.Count; i++)
                     {
@@ -744,7 +744,8 @@ public sealed class GameScene : IScene
     private void DrawTableZone(RenderWindow window)
     {
         float centerX = _game.Scale.CurrentWidth / 2;
-        float y = _game.Scale.S(StatusTextHeight + 100f);
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.TableScale);
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;  // przesunięte w dół o 1/2 wysokości karty
 
         var cards = State.Table.Cards.ToList();
 
@@ -760,7 +761,6 @@ public sealed class GameScene : IScene
         if (cards.Count == 0) return;
 
         // Calculate card positions
-        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.TableScale);
         float spacing = cardSize.X * CardSpacingRatio;
         float totalWidth = cards.Count * cardSize.X + (cards.Count - 1) * spacing;
         float startX = centerX - totalWidth / 2;

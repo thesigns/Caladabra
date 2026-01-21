@@ -1,4 +1,5 @@
 using System.Reflection;
+using Caladabra.Core.Cards;
 using SFML.Graphics;
 
 namespace Caladabra.Desktop.Core;
@@ -10,7 +11,6 @@ public sealed class AssetManager
 
     private readonly string _basePath;
     private readonly string _fontsPath;
-    private readonly string _texturesPath;
 
     public AssetManager()
     {
@@ -18,7 +18,6 @@ public sealed class AssetManager
         var exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? ".";
         _basePath = Path.Combine(exeDir, "Assets");
         _fontsPath = Path.Combine(_basePath, "Fonts");
-        _texturesPath = Path.Combine(_basePath, "Textures");
     }
 
     public Font GetFont(string name)
@@ -37,19 +36,30 @@ public sealed class AssetManager
 
     public Font DefaultFont => GetFont("Lato-Regular.ttf");
 
-    public Texture GetTexture(string path)
+    public Texture GetTexture(string relativePath)
     {
-        if (_textures.TryGetValue(path, out var texture))
+        if (_textures.TryGetValue(relativePath, out var texture))
             return texture;
 
-        var fullPath = Path.Combine(_texturesPath, path);
+        var fullPath = Path.Combine(_basePath, relativePath);
         if (!File.Exists(fullPath))
             throw new FileNotFoundException($"Texture not found: {fullPath}");
 
         texture = new Texture(fullPath);
-        _textures[path] = texture;
+        _textures[relativePath] = texture;
         return texture;
     }
+
+    // === Card textures ===
+
+    public Texture GetCardFront(Flavor flavor) =>
+        GetTexture(Path.Combine("Cards", "Fronts", $"card_front_{flavor.ToString().ToLower()}.png"));
+
+    public Texture GetCardBack(Flavor flavor) =>
+        GetTexture(Path.Combine("Cards", "Backs", $"card_back_{flavor.ToString().ToLower()}.png"));
+
+    public Texture GetFlavorIcon(Flavor flavor) =>
+        GetTexture(Path.Combine("Cards", "Icons", $"icon_{flavor.ToString().ToLower()}.png"));
 
     public void PreloadAssets()
     {
