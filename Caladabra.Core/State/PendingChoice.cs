@@ -20,6 +20,9 @@ public enum ChoiceType
     /// <summary>Wybór karty z kibelka.</summary>
     SelectFromToilet,
 
+    /// <summary>Wybór karty ze spiżarni.</summary>
+    SelectFromPantry,
+
     /// <summary>Wybór karty z Listy Kart Caladabra.</summary>
     SelectFromCardList,
 

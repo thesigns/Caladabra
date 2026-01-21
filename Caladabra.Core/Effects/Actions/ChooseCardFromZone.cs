@@ -92,6 +92,7 @@ public sealed class ChooseCardFromZone : IEffect
         ZoneType.Table => ChoiceType.SelectFromTable,
         ZoneType.Stomach => ChoiceType.SelectFromStomach,
         ZoneType.Toilet => ChoiceType.SelectFromToilet,
+        ZoneType.Pantry => ChoiceType.SelectFromPantry,
         ZoneType.CardList when _flavorFilter.HasValue => ChoiceType.SelectFromCardListFiltered,
         ZoneType.CardList => ChoiceType.SelectFromCardList,
         _ => ChoiceType.SelectFromHand

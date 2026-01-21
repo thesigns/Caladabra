@@ -44,6 +44,7 @@ public sealed class CardListScene : IScene
     public Flavor? FlavorFilter { get; set; }
     public Action<int>? OnCardSelected { get; set; }
     public Action? OnClose { get; set; }
+    public string? CustomTitle { get; set; }
 
     // Layout
     private const int CardsPerRow = 6;
@@ -324,9 +325,9 @@ public sealed class CardListScene : IScene
 
     private void DrawHeader(RenderWindow window)
     {
-        string title = Mode == CardListMode.Select
+        string title = CustomTitle ?? (Mode == CardListMode.Select
             ? "Wybierz kartę"
-            : "Lista Kart Caladabra";
+            : "Lista Kart Caladabra");
 
         if (FlavorFilter.HasValue)
         {

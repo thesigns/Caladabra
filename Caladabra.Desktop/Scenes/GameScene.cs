@@ -153,11 +153,14 @@ public sealed class GameScene : IScene
             return;
         }
 
-        // If awaiting CardList choice, open CardListScene (handled in Update, but also allow manual click)
+        // If awaiting CardList/Toilet/Pantry choice, open CardListScene (handled in Update, but also allow manual click)
         if (_controller.IsAwaitingChoice && State.PendingChoice != null)
         {
             var choiceType = State.PendingChoice.Type;
-            if (choiceType == ChoiceType.SelectFromCardList || choiceType == ChoiceType.SelectFromCardListFiltered)
+            if (choiceType == ChoiceType.SelectFromCardList ||
+                choiceType == ChoiceType.SelectFromCardListFiltered ||
+                choiceType == ChoiceType.SelectFromToilet ||
+                choiceType == ChoiceType.SelectFromPantry)
             {
                 OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
                 return;
@@ -220,11 +223,14 @@ public sealed class GameScene : IScene
             _errorMessageTimer -= deltaTime;
         }
 
-        // Auto-open CardListScene for CardList choices
+        // Auto-open CardListScene for CardList/Toilet/Pantry choices
         if (_controller.IsAwaitingChoice && State.PendingChoice != null && !_cardListSceneOpen)
         {
             var choiceType = State.PendingChoice.Type;
-            if (choiceType == ChoiceType.SelectFromCardList || choiceType == ChoiceType.SelectFromCardListFiltered)
+            if (choiceType == ChoiceType.SelectFromCardList ||
+                choiceType == ChoiceType.SelectFromCardListFiltered ||
+                choiceType == ChoiceType.SelectFromToilet ||
+                choiceType == ChoiceType.SelectFromPantry)
             {
                 OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
             }
@@ -940,6 +946,14 @@ public sealed class GameScene : IScene
                     _cardListSceneOpen = false;
                     _controller.MakeChoice(selectedIndex);
                 }
+            };
+
+            // Ustaw tytuł kontekstowy dla strefy
+            cardListScene.CustomTitle = State.PendingChoice.Type switch
+            {
+                ChoiceType.SelectFromToilet => "Wybierz z Kibelka",
+                ChoiceType.SelectFromPantry => "Wybierz ze Spiżarni",
+                _ => null
             };
         }
         else
