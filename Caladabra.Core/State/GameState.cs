@@ -89,9 +89,10 @@ public sealed class GameState
     public bool CheckWinCondition() => Fat <= GameRules.MinFat;
 
     /// <summary>
-    /// Sprawdza warunek przegranej.
+    /// Sprawdza warunek przegranej (brak kart lub przekroczony limit tur).
     /// </summary>
-    public bool CheckLoseCondition() => Hand.Count == 0 && Pantry.Count == 0;
+    public bool CheckLoseCondition() =>
+        (Hand.Count == 0 && Pantry.Count == 0) || Turn > GameRules.MaxTurns;
 
     /// <summary>
     /// Pobiera strefę po typie.

@@ -135,6 +135,17 @@ public sealed class GameScene : IScene
 
     private void HandleLeftClick()
     {
+        // Gra skończona - nie reaguj na kliknięcia (z wyjątkiem przeglądania)
+        if (_controller.IsGameOver)
+        {
+            // Pozwól tylko na przycisk "Lista Kart"
+            if (_cardListButtonRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
+            {
+                OpenCardListScene(CardListMode.Browse);
+            }
+            return;
+        }
+
         // Check "Lista Kart" button click
         if (_cardListButtonRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
         {
@@ -181,6 +192,9 @@ public sealed class GameScene : IScene
 
     private void HandleRightClick()
     {
+        // Gra skończona - nie reaguj na kliknięcia
+        if (_controller.IsGameOver) return;
+
         // Zjedz kartę z ręki (single-click PPM)
         if (_hoveredHandIndex >= 0 && !_controller.IsAwaitingChoice)
         {
@@ -219,7 +233,7 @@ public sealed class GameScene : IScene
         // Update status labels
         _fatLabel.DisplayedString = $"Tłuszcz: {State.Fat}";
         _willpowerLabel.DisplayedString = $"Siła Woli: {State.Willpower}/{GameRules.MaxWillpower}";
-        _turnLabel.DisplayedString = $"Tura: {State.Turn}";
+        _turnLabel.DisplayedString = $"Tura: {State.Turn}/{GameRules.MaxTurns}";
 
         // Update info text based on game state
         if (_controller.IsGameOver)

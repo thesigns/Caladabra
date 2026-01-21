@@ -236,7 +236,7 @@ public static class ConsoleRenderer
         System.Console.WriteLine();
 
         WriteColored("  CEL GRY:", ConsoleColor.Yellow);
-        System.Console.WriteLine(" Zredukuj Tłuszcz do 0 zanim skończy się Spiżarnia i ręka.");
+        System.Console.WriteLine(" Zredukuj Tłuszcz do 0 w ciągu 30 dni (tur).");
         System.Console.WriteLine();
 
         WriteColored("  ZAGRYWANIE KART [P]lay:", ConsoleColor.Green);
@@ -262,7 +262,7 @@ public static class ConsoleRenderer
         System.Console.WriteLine();
 
         WriteColored("  PRZEGRANA:", ConsoleColor.DarkRed);
-        System.Console.WriteLine(" Gdy ręka pusta i nie możesz nic zrobić.");
+        System.Console.WriteLine(" Po 30 turach z Tłuszczem > 0, lub gdy ręka pusta.");
         System.Console.WriteLine();
         System.Console.WriteLine(line);
     }

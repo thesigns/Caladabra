@@ -115,9 +115,9 @@ public sealed class GameController
     {
         return State.Phase switch
         {
-            GamePhase.Won => $"Gratulacje! Wygrałeś w {State.Turn} turach. Pozostały tłuszcz: {State.Fat}",
-            GamePhase.Lost => State.Fat <= 0
-                ? "Przegrałeś - tłuszcz spadł do zera!"
+            GamePhase.Won => $"Gratulacje! Wygrałeś w {State.Turn} turach!",
+            GamePhase.Lost => State.Turn > GameRules.MaxTurns
+                ? $"Przegrałeś - minęło {GameRules.MaxTurns} dni diety! Tłuszcz: {State.Fat}"
                 : "Przegrałeś - skończyły się karty w ręce!",
             _ => ""
         };

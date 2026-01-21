@@ -331,11 +331,11 @@ Karty umami to karty, które zmieniają inne karty – ich koszt, smak, kalorycz
 ## Warunek zwycięstwa i przegranej
 
 ### Zwycięstwo
-Celem gry jest zredukowanie nadmiarowego **Tłuszczu do 0**. Jeśli gracz zredukuje Tłuszcz do 0 – **wygrywa**.
+Celem gry jest zredukowanie nadmiarowego **Tłuszczu do 0** w ciągu **30 tur** (dni diety). Jeśli gracz zredukuje Tłuszcz do 0 – **wygrywa**.
 
 ### Przegrana
-- Jeśli graczowi nie uda się osiągnąć tego wyniku przed zużyciem wszystkich kart w Spiżarni – **przegrywa**
-- Jeśli Tłuszcza jest > 0 a gracz z jakiegoś powodu nie może zagrać ani zjeść żadnej karty (np. 0 kart w Ręce) – **przegrywa**
+- Jeśli po **30 turach** Tłuszcz jest nadal > 0 – **przegrywa** (czas na dietę się skończył!)
+- Jeśli graczowi skończą się karty w Ręce i Spiżarni – **przegrywa**
 
 ---
 

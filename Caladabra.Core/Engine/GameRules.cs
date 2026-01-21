@@ -14,6 +14,9 @@ public static class GameRules
     /// <summary>Minimalna ilość Tłuszczu (cel gry).</summary>
     public const int MinFat = 0;
 
+    /// <summary>Maksymalna liczba tur (dni diety). Po przekroczeniu gracz przegrywa.</summary>
+    public const int MaxTurns = 30;
+
     /// <summary>Początkowa ilość Siły Woli.</summary>
     public const int StartingWillpower = 12;
 

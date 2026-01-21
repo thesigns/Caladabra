@@ -516,7 +516,10 @@ public sealed class GameEngine
         else if (State.CheckLoseCondition())
         {
             State.Phase = GamePhase.Lost;
-            events.Add(new GameLostEvent(State.Turn, "Brak kart w ręce i spiżarni."));
+            var reason = State.Turn > GameRules.MaxTurns
+                ? $"Minęło {GameRules.MaxTurns} dni diety. Tłuszcz: {State.Fat}."
+                : "Brak kart w ręce i spiżarni.";
+            events.Add(new GameLostEvent(State.Turn, reason));
         }
     }
 
