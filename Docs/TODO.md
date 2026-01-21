@@ -1,7 +1,7 @@
 # Caladabra - Lista TODO
 
 > Plik dla kontynuacji pracy w kolejnych sesjach.
-> Ostatnia aktualizacja: 2026-01-21
+> Ostatnia aktualizacja: 2026-01-22
 
 ---
 
@@ -45,6 +45,19 @@
 - [x] Hat trick OnDraw trigger
 - [x] ObjectDisposedException dla Clock przy overlay (nie dispose w Exit())
 - [x] CardListScene - zachowanie indeksów wyboru (CardListItem z ChoiceIndex)
+- [x] Initial hand incomplete bug (Kwantowa próżnia OnDraw przerywała DrawInitialHand)
+
+#### Seed & Debug
+- [x] Seed wyświetlany pod Spiżarnią w GameScene
+- [x] `EnterSeedScene.cs` - overlay do wpisania seeda
+- [x] `TextInput.cs` - komponent UI do wprowadzania tekstu
+- [x] Przycisk "Nowa Gra (Ziarno)" w MainMenuScene
+
+#### Nowe Karty (2026-01-22)
+- [x] `ForEachCardByIdInZone.cs` - efekt liczący karty po ID
+- [x] Trzydniowa głodówka (Słona, SW:3, Kal:0)
+- [x] Maraton (Słona, SW:4, Kal:1)
+- [x] Talia: 20 typów × 3 kopie = 60 kart
 
 ---
 
@@ -133,10 +146,11 @@
 
 ### Balans (Ongoing)
 
-- [ ] Testowanie wszystkich 18 kart
+- [ ] Testowanie wszystkich 20 kart
 - [ ] Dostosowanie wartości SW/Kal/efektów
 - [ ] Sprawdzenie kombinacji kart (synergies/broken combos)
 - [ ] Plik `balans.json` z notatkami
+- [ ] Gra nie jest jeszcze zbalansowana na wygraną
 
 ---
 
@@ -160,12 +174,16 @@
 ### Ważne Pliki
 - `Caladabra.Desktop/Scenes/MainMenuScene.cs` - menu główne
 - `Caladabra.Desktop/Scenes/OptionsScene.cs` - ekran opcji (overlay)
+- `Caladabra.Desktop/Scenes/EnterSeedScene.cs` - wprowadzanie seeda (overlay)
 - `Caladabra.Desktop/Scenes/GameScene.cs` - główna scena gry (~900 linii)
 - `Caladabra.Desktop/Scenes/CardListScene.cs` - overlay z listą kart
 - `Caladabra.Desktop/UI/Button.cs` - komponent przycisku
+- `Caladabra.Desktop/UI/TextInput.cs` - komponent tekstu (DigitsOnly)
 - `Caladabra.Desktop/Rendering/CardRenderer.cs` - renderowanie kart
 - `Caladabra.Core/Engine/GameEngine.cs` - silnik gry
-- `Caladabra.Core/Cards/Definitions/CardDefinitions.cs` - definicje kart
+- `Caladabra.Core/Engine/DeckBuilder.cs` - budowanie talii (20×3=60)
+- `Caladabra.Core/Cards/Definitions/CardDefinitions.cs` - definicje 20 kart
+- `Caladabra.Core/Effects/Actions/ForEachCardByIdInZone.cs` - efekt dla Maratona
 
 ### Plan Implementacji
 Szczegółowy plan znajduje się w: `C:\Users\Jakub\.claude\plans\binary-humming-iverson.md`
@@ -185,6 +203,17 @@ dotnet run --project Caladabra.Console -- new --deck test_deck.json
 ---
 
 ## Changelog (Ostatnia Sesja)
+
+### 2026-01-22 (sesja 3)
+- Dodany seed do GameState i wyświetlanie pod Spiżarnią
+- Naprawiony bug: initial hand incomplete gdy Kwantowa próżnia przerywała dobieranie
+- Dodane `EnterSeedScene.cs` - overlay do ręcznego wpisania seeda
+- Dodane `TextInput.cs` - komponent UI z opcją DigitsOnly
+- Przycisk "Nowa Gra (Ziarno)" w MainMenuScene
+- Dodane 2 nowe karty: Trzydniowa głodówka, Maraton
+- Dodany efekt `ForEachCardByIdInZone.cs` (liczenie kart po ID)
+- Zaktualizowany DeckBuilder: 20 typów × 3 kopie = 60 kart
+- Maraton: -1 bazowo, -9 za każdy poprzedni w Kibelku (razem -30 za 3)
 
 ### 2026-01-21 (sesja 2)
 - Dodane `MainMenuScene.cs` - menu główne z przyciskami (Nowa Gra, Kontynuuj, Opcje, Wyjście)
