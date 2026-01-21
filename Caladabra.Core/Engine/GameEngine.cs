@@ -37,9 +37,14 @@ public sealed class GameEngine
         // Tasuj (chyba że wyłączone - np. talia z pliku)
         if (shouldShuffle)
         {
-            var random = seed.HasValue ? new Random(seed.Value) : Random.Shared;
+            // Generuj seed jeśli nie podano
+            int actualSeed = seed ?? Random.Shared.Next();
+            state.Seed = actualSeed;
+
+            var random = new Random(actualSeed);
             state.Pantry.Shuffle(random);
         }
+        // else: state.Seed pozostaje null (custom deck bez tasowania)
 
         // NIE dobieraj kart tutaj - zrób to przez DrawInitialHand()
         // Pozwala to na generowanie eventów i wywołanie OnDraw
@@ -83,6 +88,37 @@ public sealed class GameEngine
         }
 
         return events;
+    }
+
+    /// <summary>
+    /// Dokańcza dobieranie początkowej ręki po przerwaniu przez OnDraw choice.
+    /// </summary>
+    private void CompleteInitialHand(List<IGameEvent> events)
+    {
+        while (State.Hand.Count < GameRules.StartingHandSize && State.Pantry.Count > 0)
+        {
+            var card = State.Pantry.Draw();
+            if (card == null) break;
+
+            State.Hand.Add(card);
+            events.Add(new CardDrawnEvent(card));
+
+            // Wykonaj OnDraw - jeśli wymaga wyboru, przerwij
+            if (card.OnDraw != null)
+            {
+                var context = CreateEffectContext(card, events);
+                var result = card.OnDraw.Execute(context);
+
+                if (result is EffectResult.NeedsChoiceResult needsChoice)
+                {
+                    State.Phase = GamePhase.AwaitingChoice;
+                    needsChoice.Choice.EffectTrigger = "OnDraw";
+                    State.PendingChoice = needsChoice.Choice;
+                    events.Add(new ChoiceRequestedEvent(needsChoice.Choice));
+                    break; // Gracz musi wybrać - CompleteInitialHand zostanie wywołane ponownie
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -301,7 +337,16 @@ public sealed class GameEngine
         // Dobierz kartę jeśli efekt nie zawiera SkipDraw
         if (!context.ShouldSkipDraw && State.Hand.Count < GameRules.MaxHandSize && State.Pantry.Count > 0)
         {
-            DrawCards(1, events);
+            // Jeśli to tura 1 i ręka ma mniej niż 5 kart, dokończ początkowe dobieranie
+            // (bo OnDraw przerwało DrawInitialHand)
+            if (State.Turn == 1 && choice.EffectTrigger == "OnDraw" && State.Hand.Count < GameRules.StartingHandSize)
+            {
+                CompleteInitialHand(events);
+            }
+            else
+            {
+                DrawCards(1, events);
+            }
         }
 
         CheckEndConditions(events);

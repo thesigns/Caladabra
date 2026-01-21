@@ -230,6 +230,7 @@ public static class JsonRunner
             Phase = state.Phase.ToString(),
             Fat = state.Fat,
             Willpower = state.Willpower,
+            Seed = state.Seed,
             Hand = state.Hand.Cards.Select((c, i) => CardToDto(c, i + 1)).ToList(),
             Table = state.Table.Entries.Select((e, i) => new TableEntryDto
             {
@@ -288,7 +289,8 @@ public static class JsonRunner
             Turn = dto.Turn,
             Phase = Enum.Parse<GamePhase>(dto.Phase),
             Fat = dto.Fat,
-            Willpower = dto.Willpower
+            Willpower = dto.Willpower,
+            Seed = dto.Seed
         };
 
         var registry = CardRegistry.Instance;
@@ -470,6 +472,7 @@ public class GameStateDto
     public string Phase { get; set; } = "";
     public int Fat { get; set; }
     public int Willpower { get; set; }
+    public int? Seed { get; set; }
     public List<CardDto> Hand { get; set; } = [];
     public List<TableEntryDto> Table { get; set; } = [];
     public List<CardDto> Stomach { get; set; } = [];

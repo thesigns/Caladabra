@@ -60,19 +60,22 @@
 - [ ] Integracja z `EventProcessor.cs` - mapowanie IGameEvent → Animation
 
 #### Menu Główne
-- [ ] `MainMenuScene.cs`:
-  - [ ] Przycisk "Nowa Gra"
-  - [ ] Przycisk "Kontynuuj" (jeśli istnieje zapis)
-  - [ ] Przycisk "Opcje"
-  - [ ] Przycisk "Wyjście"
+- [x] `MainMenuScene.cs`:
+  - [x] Przycisk "Nowa Gra"
+  - [x] Przycisk "Kontynuuj" (jeśli istnieje zapis)
+  - [x] Przycisk "Opcje"
+  - [x] Przycisk "Wyjście"
   - [ ] Tło/logo gry
 
 #### Opcje
-- [ ] `OptionsScene.cs`:
-  - [ ] Zmiana rozdzielczości (1280x720, 1600x900, 1920x1080, 2560x1440)
-  - [ ] Fullscreen toggle
-  - [ ] Głośność (master volume)
-  - [ ] Język (pl/en)
+- [x] `OptionsScene.cs`:
+  - [x] Zmiana rozdzielczości (1280x720, 1600x900, 1920x1080, 2560x1440)
+  - [x] Fullscreen toggle
+  - [ ] Głośność (master volume) - wymaga systemu audio
+  - [ ] Język (pl/en) - wymaga LocalizationManager
+
+#### UI
+- [x] `Button.cs` - komponent przycisku z hover/press states
 
 ### Faza 5: Finalizacja (Priorytet: Średni)
 
@@ -155,8 +158,11 @@
 - **Scroll** = przewijanie w CardListScene
 
 ### Ważne Pliki
+- `Caladabra.Desktop/Scenes/MainMenuScene.cs` - menu główne
+- `Caladabra.Desktop/Scenes/OptionsScene.cs` - ekran opcji (overlay)
 - `Caladabra.Desktop/Scenes/GameScene.cs` - główna scena gry (~900 linii)
 - `Caladabra.Desktop/Scenes/CardListScene.cs` - overlay z listą kart
+- `Caladabra.Desktop/UI/Button.cs` - komponent przycisku
 - `Caladabra.Desktop/Rendering/CardRenderer.cs` - renderowanie kart
 - `Caladabra.Core/Engine/GameEngine.cs` - silnik gry
 - `Caladabra.Core/Cards/Definitions/CardDefinitions.cs` - definicje kart
@@ -180,7 +186,14 @@ dotnet run --project Caladabra.Console -- new --deck test_deck.json
 
 ## Changelog (Ostatnia Sesja)
 
-### 2026-01-21
+### 2026-01-21 (sesja 2)
+- Dodane `MainMenuScene.cs` - menu główne z przyciskami (Nowa Gra, Kontynuuj, Opcje, Wyjście)
+- Dodane `OptionsScene.cs` - ekran opcji jako overlay (rozdzielczość, fullscreen)
+- Dodane `Button.cs` - reużywalny komponent UI z hover/press states
+- Game.cs teraz startuje z MainMenuScene zamiast bezpośrednio z GameScene
+- Usunięty PlaceholderScene (nieużywany)
+
+### 2026-01-21 (sesja 1)
 - Zmiana sterowania: double-click/hold → LPM/PPM (single-click)
 - Dodany komunikat błędu przy braku SW (czerwony prostokąt z fade-out)
 - Zaktualizowany tekst info: "ESC = wyjście | LPM = zagraj | PPM = zjedz"

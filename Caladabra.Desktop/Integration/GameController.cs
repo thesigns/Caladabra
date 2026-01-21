@@ -14,6 +14,7 @@ public sealed class GameController
     private readonly List<IGameEvent> _pendingEvents = new();
 
     public GameState State => _engine.State;
+    public int? Seed => State.Seed;
     public IReadOnlyList<IGameEvent> PendingEvents => _pendingEvents;
     public bool IsGameOver => State.Phase == GamePhase.Won || State.Phase == GamePhase.Lost;
     public bool IsAwaitingChoice => State.Phase == GamePhase.AwaitingChoice;

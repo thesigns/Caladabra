@@ -23,6 +23,9 @@ public sealed class GameState
     /// <summary>Numer aktualnej tury.</summary>
     public int Turn { get; set; } = 1;
 
+    /// <summary>Seed użyty do tasowania talii (null = custom deck bez tasowania).</summary>
+    public int? Seed { get; set; }
+
     // === Faza gry ===
 
     /// <summary>Aktualna faza gry.</summary>

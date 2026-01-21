@@ -573,6 +573,9 @@ public sealed class GameScene : IScene
                 OutlineThickness = _game.Scale.S(2f)
             };
             window.Draw(slot);
+
+            // Seed pod Spiżarnią (nawet gdy pusta)
+            DrawSeedText(window, x, y + cardSize.Y);
             return;
         }
 
@@ -593,6 +596,24 @@ public sealed class GameScene : IScene
         // Górna karta (rewers z widocznym smakiem)
         var topCard = cards[^1];
         _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Back, ZoneRenderer.HandScale);
+
+        // Seed pod Spiżarnią (dla debugowania)
+        DrawSeedText(window, x, y + cardSize.Y);
+    }
+
+    private void DrawSeedText(RenderWindow window, float x, float aboveY)
+    {
+        if (_controller.Seed.HasValue)
+        {
+            var seedText = new Text(_game.Assets.DefaultFont,
+                $"Seed: {_controller.Seed.Value}",
+                _game.Scale.S(Theme.FontSizeSmall))
+            {
+                FillColor = Theme.TextMuted,
+                Position = new Vector2f(x, aboveY + _game.Scale.S(10f))
+            };
+            window.Draw(seedText);
+        }
     }
 
     private void DrawToiletZone(RenderWindow window)
