@@ -24,6 +24,11 @@ public sealed class DiscardChosenCard(ZoneType fromZone) : IEffect
         {
             case ZoneType.Table:
                 context.State.Table.Remove(card);
+                // Wykonaj OnLeaveTable
+                if (card.OnLeaveTable != null)
+                {
+                    card.OnLeaveTable.Execute(context);
+                }
                 break;
             case ZoneType.Hand:
                 // Znajdź indeks karty w ręce
