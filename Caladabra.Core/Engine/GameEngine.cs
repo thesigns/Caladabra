@@ -383,7 +383,7 @@ public sealed class GameEngine
                 var discardChoice = new PendingChoice
                 {
                     Type = ChoiceType.DiscardFromHand,
-                    Prompt = $"Ręka przepełniona ({State.Hand.Count}/{GameRules.MaxHandSize}). Odrzuć kartę:",
+                    Prompt = $"Ręka przepełniona ({State.Hand.Count}/{GameRules.MaxHandSize}). Odrzuć kartę.",
                     Options = options,
                     Continuation = DiscardChosenFromHand.Instance,
                     SourceCard = extraDrawModifier.SourceCard,
