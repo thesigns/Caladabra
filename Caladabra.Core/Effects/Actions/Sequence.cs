@@ -17,6 +17,14 @@ public sealed class Sequence : IEffect
 
     public EffectResult Execute(EffectContext context)
     {
+        // Resetuj indeks dla świeżych wywołań
+        // Kontynuacja po wyborze ma PendingChoice z tym Sequence jako Continuation
+        bool isContinuation = context.PendingChoice?.Continuation == this;
+        if (!isContinuation)
+        {
+            _currentIndex = 0;
+        }
+
         while (_currentIndex < _effects.Length)
         {
             var result = _effects[_currentIndex].Execute(context);
