@@ -204,8 +204,8 @@ public sealed class GameEngine
         // Sprawdź warunki końca gry
         CheckEndConditions(events);
 
-        // Następna tura
-        if (State.Phase == GamePhase.AwaitingAction)
+        // Następna tura (nawet jeśli jest pending choice - to wciąż nowa tura)
+        if (State.Phase != GamePhase.Won && State.Phase != GamePhase.Lost)
         {
             State.Turn++;
         }
@@ -285,8 +285,8 @@ public sealed class GameEngine
         // Sprawdź warunki końca gry
         CheckEndConditions(events);
 
-        // Następna tura
-        if (State.Phase == GamePhase.AwaitingAction)
+        // Następna tura (nawet jeśli jest pending choice - to wciąż nowa tura)
+        if (State.Phase != GamePhase.Won && State.Phase != GamePhase.Lost)
         {
             State.Turn++;
         }
