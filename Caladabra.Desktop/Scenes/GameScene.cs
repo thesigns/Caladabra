@@ -46,8 +46,7 @@ public sealed class GameScene : IScene
     private float _errorMessageTimer = 0f;
     private const float ErrorMessageDuration = 2.0f;  // 2 sekundy
 
-    // Lista Kart button
-    private FloatRect _cardListButtonRect;
+    // CardList scene state
     private bool _cardListSceneOpen = false;
 
     // Animation system
@@ -95,18 +94,18 @@ public sealed class GameScene : IScene
         _zoneRenderer = new ZoneRenderer(_cardRenderer, font, _game.Scale);
         _animationManager = new AnimationManager();
 
-        // Status bar labels
-        _fatLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal))
+        // Status bar labels (2x większa czcionka)
+        _fatLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
         {
             FillColor = Theme.TextPrimary
         };
 
-        _willpowerLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal))
+        _willpowerLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
         {
             FillColor = Theme.TextPrimary
         };
 
-        _turnLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal))
+        _turnLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
         {
             FillColor = Theme.TextPrimary
         };
@@ -171,21 +170,9 @@ public sealed class GameScene : IScene
         // Blokada interakcji podczas animacji
         if (_animationManager.IsAnimating) return;
 
-        // Gra skończona - nie reaguj na kliknięcia (z wyjątkiem przeglądania)
+        // Gra skończona - nie reaguj na kliknięcia
         if (_controller.IsGameOver)
         {
-            // Pozwól tylko na przycisk "Lista Kart"
-            if (_cardListButtonRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
-            {
-                OpenCardListScene(CardListMode.Browse);
-            }
-            return;
-        }
-
-        // Check "Lista Kart" button click
-        if (_cardListButtonRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
-        {
-            OpenCardListScene(CardListMode.Browse);
             return;
         }
 
@@ -697,41 +684,15 @@ public sealed class GameScene : IScene
 
     private void DrawPreviewPanel(RenderWindow window)
     {
-        float x = _game.Scale.S(PaddingHorizontal);
-        float baseY = _game.Scale.S(PaddingVertical);
-        float width = _game.Scale.S(PreviewPanelWidth);
-        float buttonHeight = _game.Scale.S(35f);
-
-        // Przycisk "Lista Kart"
-        _cardListButtonRect = new FloatRect(new Vector2f(x, baseY), new Vector2f(width, buttonHeight));
-
-        var buttonBg = new RectangleShape(new Vector2f(width, buttonHeight))
-        {
-            Position = new Vector2f(x, baseY),
-            FillColor = new Color(50, 50, 55),
-            OutlineColor = new Color(70, 70, 75),
-            OutlineThickness = _game.Scale.S(1f)
-        };
-        window.Draw(buttonBg);
-
-        var buttonText = new Text(_game.Assets.DefaultFont, "Lista Kart", _game.Scale.S(Theme.FontSizeSmall))
-        {
-            FillColor = Theme.TextSecondary
-        };
-        var btnBounds = buttonText.GetLocalBounds();
-        buttonText.Position = new Vector2f(
-            x + (width - btnBounds.Size.X) / 2,
-            baseY + (buttonHeight - btnBounds.Size.Y) / 2 - _game.Scale.S(3f)
-        );
-        window.Draw(buttonText);
-
-        // Podgląd karty (bez szarego tła) - tylko gdy najechano na kartę
+        // Podgląd karty - tylko gdy najechano na kartę
         if (_hoveredCard != null)
         {
+            float x = _game.Scale.S(PaddingHorizontal);
+            float baseY = _game.Scale.S(PaddingVertical);
             var cardSize = _cardRenderer.GetCardSize(PreviewScale);
-            // Wyśrodkuj pionowo (między przyciskiem a dołem ekranu)
-            float availableHeight = _game.Scale.CurrentHeight - baseY - buttonHeight - _game.Scale.S(HandYOffset);
-            float cardY = baseY + buttonHeight + (availableHeight - cardSize.Y) / 2;
+            // Wyśrodkuj pionowo
+            float availableHeight = _game.Scale.CurrentHeight - baseY - _game.Scale.S(HandYOffset);
+            float cardY = baseY + (availableHeight - cardSize.Y) / 2;
             var cardPos = new Vector2f(x, cardY);
             _cardRenderer.Draw(window, _hoveredCard, cardPos, CardDisplayMode.Full, PreviewScale);
         }
@@ -743,14 +704,6 @@ public sealed class GameScene : IScene
         // Ta sama pozycja Y co Ręka
         float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
         var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
-
-        // Label
-        var label = new Text(_game.Assets.DefaultFont, $"Spiżarnia [{State.Pantry.Count}]", _game.Scale.S(Theme.FontSizeSmall))
-        {
-            FillColor = Theme.TextSecondary,
-            Position = new Vector2f(x, y - _game.Scale.S(25f))
-        };
-        window.Draw(label);
 
         var cards = State.Pantry.Cards.ToList();
         if (cards.Count == 0)
@@ -764,47 +717,39 @@ public sealed class GameScene : IScene
                 OutlineThickness = _game.Scale.S(2f)
             };
             window.Draw(slot);
-
-            // Seed pod Spiżarnią (nawet gdy pusta)
-            DrawSeedText(window, x, y + cardSize.Y);
-            return;
         }
-
-        // Efekt stosu (offsetowane cienie)
-        int shadowCount = Math.Min(3, cards.Count - 1);
-        for (int i = shadowCount; i > 0; i--)
+        else
         {
-            float offset = _game.Scale.S(2f) * i;
-            var shadowPos = new Vector2f(x + offset, y + offset);
-            var shadow = new RectangleShape(cardSize)
+            // Efekt stosu (offsetowane cienie)
+            int shadowCount = Math.Min(3, cards.Count - 1);
+            for (int i = shadowCount; i > 0; i--)
             {
-                Position = shadowPos,
-                FillColor = new Color(30, 30, 35)
-            };
-            window.Draw(shadow);
+                float offset = _game.Scale.S(2f) * i;
+                var shadowPos = new Vector2f(x + offset, y + offset);
+                var shadow = new RectangleShape(cardSize)
+                {
+                    Position = shadowPos,
+                    FillColor = new Color(30, 30, 35)
+                };
+                window.Draw(shadow);
+            }
+
+            // Górna karta (rewers z widocznym smakiem)
+            var topCard = cards[^1];
+            _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Back, ZoneRenderer.HandScale);
         }
 
-        // Górna karta (rewers z widocznym smakiem)
-        var topCard = cards[^1];
-        _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Back, ZoneRenderer.HandScale);
-
-        // Seed pod Spiżarnią (dla debugowania)
-        DrawSeedText(window, x, y + cardSize.Y);
-    }
-
-    private void DrawSeedText(RenderWindow window, float x, float aboveY)
-    {
-        if (_controller.Seed.HasValue)
+        // Label POD kartą, wycentrowany
+        var label = new Text(_game.Assets.DefaultFont, $"Spiżarnia [{State.Pantry.Count}]", _game.Scale.S(Theme.FontSizeNormal))
         {
-            var seedText = new Text(_game.Assets.DefaultFont,
-                $"Seed: {_controller.Seed.Value}",
-                _game.Scale.S(Theme.FontSizeSmall))
-            {
-                FillColor = Theme.TextMuted,
-                Position = new Vector2f(x, aboveY + _game.Scale.S(10f))
-            };
-            window.Draw(seedText);
-        }
+            FillColor = Theme.TextSecondary
+        };
+        var labelBounds = label.GetLocalBounds();
+        label.Position = new Vector2f(
+            x + (cardSize.X - labelBounds.Size.X) / 2,
+            y + cardSize.Y + _game.Scale.S(10f)
+        );
+        window.Draw(label);
     }
 
     private void DrawToiletZone(RenderWindow window)
@@ -813,14 +758,6 @@ public sealed class GameScene : IScene
         // Ta sama pozycja Y co Ręka, wyrównany do prawej
         float x = _game.Scale.CurrentWidth - _game.Scale.S(PaddingHorizontal) - cardSize.X;
         float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
-
-        // Label
-        var label = new Text(_game.Assets.DefaultFont, $"Kibelek [{State.Toilet.Count}]", _game.Scale.S(Theme.FontSizeSmall))
-        {
-            FillColor = Theme.TextSecondary,
-            Position = new Vector2f(x, y - _game.Scale.S(25f))
-        };
-        window.Draw(label);
 
         var cards = State.Toilet.Cards.ToList();
         if (cards.Count == 0)
@@ -834,26 +771,39 @@ public sealed class GameScene : IScene
                 OutlineThickness = _game.Scale.S(2f)
             };
             window.Draw(slot);
-            return;
         }
-
-        // Efekt stosu (offsetowane cienie)
-        int shadowCount = Math.Min(3, cards.Count - 1);
-        for (int i = shadowCount; i > 0; i--)
+        else
         {
-            float offset = _game.Scale.S(2f) * i;
-            var shadowPos = new Vector2f(x + offset, y + offset);
-            var shadow = new RectangleShape(cardSize)
+            // Efekt stosu (offsetowane cienie)
+            int shadowCount = Math.Min(3, cards.Count - 1);
+            for (int i = shadowCount; i > 0; i--)
             {
-                Position = shadowPos,
-                FillColor = new Color(30, 30, 35)
-            };
-            window.Draw(shadow);
+                float offset = _game.Scale.S(2f) * i;
+                var shadowPos = new Vector2f(x + offset, y + offset);
+                var shadow = new RectangleShape(cardSize)
+                {
+                    Position = shadowPos,
+                    FillColor = new Color(30, 30, 35)
+                };
+                window.Draw(shadow);
+            }
+
+            // Górna karta (awers)
+            var topCard = cards[^1];
+            _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Small, ZoneRenderer.HandScale);
         }
 
-        // Górna karta (awers)
-        var topCard = cards[^1];
-        _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Small, ZoneRenderer.HandScale);
+        // Label POD kartą, wycentrowany
+        var label = new Text(_game.Assets.DefaultFont, $"Kibelek [{State.Toilet.Count}]", _game.Scale.S(Theme.FontSizeNormal))
+        {
+            FillColor = Theme.TextSecondary
+        };
+        var labelBounds = label.GetLocalBounds();
+        label.Position = new Vector2f(
+            x + (cardSize.X - labelBounds.Size.X) / 2,
+            y + cardSize.Y + _game.Scale.S(10f)
+        );
+        window.Draw(label);
     }
 
     private void DrawStomachZone(RenderWindow window)
@@ -1016,7 +966,7 @@ public sealed class GameScene : IScene
         }
 
         // Label pod kartami
-        var label = new Text(_game.Assets.DefaultFont, "Ręka", _game.Scale.S(Theme.FontSizeSmall))
+        var label = new Text(_game.Assets.DefaultFont, "Ręka", _game.Scale.S(Theme.FontSizeNormal))
         {
             FillColor = Theme.TextSecondary
         };
@@ -1086,10 +1036,10 @@ public sealed class GameScene : IScene
 
     private void UpdateLayout()
     {
-        // Update font sizes
-        _fatLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal);
-        _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal);
-        _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal);
+        // Update font sizes (stats 2x większe)
+        _fatLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
+        _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
+        _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
         _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeSmall);
     }
 
