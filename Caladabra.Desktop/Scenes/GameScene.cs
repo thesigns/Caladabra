@@ -353,7 +353,10 @@ public sealed class GameScene : IScene
         if (CheckTableHover()) return;
 
         // Check Stomach cards
-        CheckStomachHover();
+        if (CheckStomachHover()) return;
+
+        // Check Toilet cards
+        CheckToiletHover();
     }
 
     private bool CheckHandHover()
@@ -437,6 +440,24 @@ public sealed class GameScene : IScene
                 _hoveredStomachIndex = cardIndex;
                 return true;
             }
+        }
+        return false;
+    }
+
+    private bool CheckToiletHover()
+    {
+        var cards = State.Toilet.Cards.ToList();
+        if (cards.Count == 0) return false;
+
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
+        float x = _game.Scale.CurrentWidth - _game.Scale.S(PaddingHorizontal) - cardSize.X;
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
+
+        var cardRect = new FloatRect(new Vector2f(x, y), cardSize);
+        if (cardRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
+        {
+            _hoveredCard = cards[^1];  // Wierzchnia karta
+            return true;
         }
         return false;
     }
@@ -755,9 +776,9 @@ public sealed class GameScene : IScene
             window.Draw(shadow);
         }
 
-        // Górna karta (rewers)
+        // Górna karta (awers)
         var topCard = cards[^1];
-        _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Back, ZoneRenderer.HandScale);
+        _cardRenderer.Draw(window, topCard, new Vector2f(x, y), CardDisplayMode.Small, ZoneRenderer.HandScale);
     }
 
     private void DrawStomachZone(RenderWindow window)
