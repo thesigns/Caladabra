@@ -448,7 +448,7 @@ Na rewersie karty widać tylko jej **Smak**.
 |-------|:--:|:---:|------------|
 | **Łapczywe jedzenie** | 5 | 5 | Po zagraniu tej karty przenieś jedną wybraną kartę z Ręki do Żołądka i dobierz jeszcze jedną kartę. Zredukuj Tłuszcz o 3 jeśli karta przeniesiona była słona. *„Zjadłem zanim postawiłem na stole."* |
 | **Grzebanie w kibelku** | 6 | 4 | Po zagraniu tej karty zamiast dobierać kartę ze Spiżarni, wybierz dowolną kartę z Kibelka i weź ją do Ręki. *„Coś mi tam wpadło."* |
-| **Jasnowidzenie** | 7 | 2 | Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni możesz wziąć jedną więcej - i jedną z nich odrzucasz. Po trzech turach usuń kartę ze stołu. *„Zobaczyłem przyszłość. Znowu byłem gruby."* |
+| **Jasnowidzenie** | 7 | 2 | Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni ciągniesz jedną więcej - wybierasz jedną z nich do zachowania, a resztę odrzucasz. Po trzech turach usuń kartę ze stołu. *„Zobaczyłem przyszłość. Znowu byłem gruby."* |
 
 ### Karty Kwaśne (Receptury)
 

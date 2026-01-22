@@ -315,7 +315,7 @@ public static class CardDefinitions
             WillpowerCost = 7,
             Calories = 2,
             FlavorText = "Zobaczyłem przyszłość. Znowu byłem gruby.",
-            Instruction = "Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni możesz wziąć jedną więcej - i jedną z nich odrzucasz. Po trzech turach usuń kartę ze stołu.",
+            Instruction = "Po zagraniu tej karty połóż ją na Stole. Dopóki tam leży, dobierając kartę ze Spiżarni ciągniesz jedną więcej - wybierasz jedną z nich do zachowania, a resztę odrzucasz. Po trzech turach usuń kartę ze stołu.",
             OnPlay = new PlaceOnTable(3),
             OnEnterTable = new AddModifier(ModifierType.ExtraDrawThenDiscard, 1),
             OnLeaveTable = RemoveModifiersFromSource.Instance

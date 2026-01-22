@@ -71,6 +71,16 @@ public sealed class GameScene : IScene
     private const float CardSpacingRatio = 0.15f;
     private const float StomachCardSpacing = 8f;  // odstęp między kartami żołądka (piksele)
 
+    // Inline card selection (zamiast CardListScene)
+    private bool _inlineSelectionActive = false;
+    private List<ChoiceOption> _selectionOptions = new();
+    private int _selectionScrollOffset = 0;
+    private HashSet<int> _selectedIndices = new();
+    private int _hoveredSelectionIndex = -1;
+    private const int MaxVisibleSelectionCards = 5;
+    private const float SelectionCardScale = 1.0f;
+    private const float ArrowButtonSize = 40f;
+
     public GameScene(Game game, GameController controller)
     {
         _game = game;
@@ -143,6 +153,17 @@ public sealed class GameScene : IScene
         {
             HandleRightClick();
         }
+
+        // Scroll = przewijanie inline selection
+        if (sfmlEvent.Type == EventType.MouseWheelScrolled && _inlineSelectionActive)
+        {
+            if (sfmlEvent.MouseWheelScroll.Delta > 0)
+                _selectionScrollOffset = Math.Max(0, _selectionScrollOffset - 1);
+            else
+                _selectionScrollOffset = Math.Min(
+                    Math.Max(0, _selectionOptions.Count - MaxVisibleSelectionCards),
+                    _selectionScrollOffset + 1);
+        }
     }
 
     private void HandleLeftClick()
@@ -168,18 +189,59 @@ public sealed class GameScene : IScene
             return;
         }
 
-        // If awaiting CardList/Toilet/Pantry choice, open CardListScene (handled in Update, but also allow manual click)
-        if (_controller.IsAwaitingChoice && State.PendingChoice != null)
+        // Obsługa inline selection
+        if (_inlineSelectionActive && State.PendingChoice != null)
         {
-            var choiceType = State.PendingChoice.Type;
-            if (choiceType == ChoiceType.SelectFromCardList ||
-                choiceType == ChoiceType.SelectFromCardListFiltered ||
-                choiceType == ChoiceType.SelectFromToilet ||
-                choiceType == ChoiceType.SelectFromPantry)
+            var choice = State.PendingChoice;
+            int requiredCount = choice.MaxChoices;
+
+            // Klik na strzałkę lewą
+            if (_selectionScrollOffset > 0 && IsMouseOver(GetLeftArrowRect()))
             {
-                OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
+                _selectionScrollOffset--;
                 return;
             }
+
+            // Klik na strzałkę prawą
+            if (_selectionScrollOffset + MaxVisibleSelectionCards < _selectionOptions.Count &&
+                IsMouseOver(GetRightArrowRect()))
+            {
+                _selectionScrollOffset++;
+                return;
+            }
+
+            // Klik na przycisk Zatwierdź (multi-select)
+            if (requiredCount > 1 && _selectedIndices.Count == requiredCount &&
+                IsMouseOver(GetConfirmButtonRect()))
+            {
+                // Przekaż wszystkie zaznaczone indeksy
+                var indices = _selectedIndices.Select(i => _selectionOptions[i].Index).ToArray();
+                CloseInlineSelection();
+                _controller.MakeChoice(indices[0]); // Na razie single - TODO: multi
+                return;
+            }
+
+            // Klik na kartę
+            if (_hoveredSelectionIndex >= 0)
+            {
+                if (requiredCount == 1)
+                {
+                    // Single select - od razu wybierz
+                    var choiceIndex = _selectionOptions[_hoveredSelectionIndex].Index;
+                    CloseInlineSelection();
+                    _controller.MakeChoice(choiceIndex);
+                }
+                else
+                {
+                    // Multi select - toggle zaznaczenia
+                    if (_selectedIndices.Contains(_hoveredSelectionIndex))
+                        _selectedIndices.Remove(_hoveredSelectionIndex);
+                    else if (_selectedIndices.Count < requiredCount)
+                        _selectedIndices.Add(_hoveredSelectionIndex);
+                }
+                return;
+            }
+            return; // Nie pozwalaj na inne akcje gdy inline selection aktywna
         }
 
         // If awaiting choice, handle choice selection
@@ -250,17 +312,20 @@ public sealed class GameScene : IScene
             _errorMessageTimer -= deltaTime;
         }
 
-        // Auto-open CardListScene for CardList/Toilet/Pantry choices
-        if (_controller.IsAwaitingChoice && State.PendingChoice != null && !_cardListSceneOpen)
+        // Auto-show inline selection for CardList/Toilet/Pantry/DiscardFromHand choices
+        if (_controller.IsAwaitingChoice && State.PendingChoice != null && !_inlineSelectionActive)
         {
             var choiceType = State.PendingChoice.Type;
-            if (choiceType == ChoiceType.SelectFromCardList ||
-                choiceType == ChoiceType.SelectFromCardListFiltered ||
-                choiceType == ChoiceType.SelectFromToilet ||
-                choiceType == ChoiceType.SelectFromPantry)
+            if (IsInlineSelectionChoiceType(choiceType))
             {
-                OpenCardListScene(CardListMode.Select, State.PendingChoice.FlavorFilter);
+                ShowInlineSelection(State.PendingChoice);
             }
+        }
+
+        // Zamknij inline selection jeśli gra nie czeka już na wybór
+        if (_inlineSelectionActive && !_controller.IsAwaitingChoice)
+        {
+            CloseInlineSelection();
         }
 
         // Update status labels
@@ -338,6 +403,10 @@ public sealed class GameScene : IScene
         _hoveredTableIndex = -1;
         _hoveredStomachIndex = -1;
         _hoveredChoiceIndex = -1;
+        _hoveredSelectionIndex = -1;
+
+        // Check inline selection first (gdy aktywna)
+        if (CheckInlineSelectionHover()) return;
 
         // If awaiting choice, check choice options first
         if (_controller.IsAwaitingChoice && State.PendingChoice != null)
@@ -583,7 +652,13 @@ public sealed class GameScene : IScene
         DrawPantryZone(window);
         DrawToiletZone(window);
         DrawStomachZone(window);
-        DrawTableZone(window);
+
+        // Stół lub inline selection (wzajemnie się wykluczają)
+        if (_inlineSelectionActive)
+            DrawInlineSelection(window);
+        else
+            DrawTableZone(window);
+
         DrawHandZone(window);
 
         // Info text at bottom
@@ -1057,6 +1132,256 @@ public sealed class GameScene : IScene
     {
         _cardListSceneOpen = false;
     }
+
+    #region Inline Selection
+
+    private void ShowInlineSelection(PendingChoice choice)
+    {
+        _inlineSelectionActive = true;
+        _selectionOptions = choice.Options;
+        _selectionScrollOffset = 0;
+        _selectedIndices.Clear();
+        _hoveredSelectionIndex = -1;
+    }
+
+    private void CloseInlineSelection()
+    {
+        _inlineSelectionActive = false;
+        _selectionOptions = new();
+        _selectedIndices.Clear();
+        _hoveredSelectionIndex = -1;
+    }
+
+    private bool IsInlineSelectionChoiceType(ChoiceType type)
+    {
+        return type == ChoiceType.SelectFromCardList ||
+               type == ChoiceType.SelectFromCardListFiltered ||
+               type == ChoiceType.SelectFromToilet ||
+               type == ChoiceType.SelectFromPantry ||
+               type == ChoiceType.DiscardFromHand;
+    }
+
+    private void DrawInlineSelection(RenderWindow window)
+    {
+        if (!_inlineSelectionActive || State.PendingChoice == null) return;
+
+        var choice = State.PendingChoice;
+        var cardSize = _cardRenderer.GetCardSize(SelectionCardScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+
+        // Pozycja Y (tam gdzie stół)
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+        float centerX = _game.Scale.CurrentWidth / 2;
+
+        // Nagłówek
+        int requiredCount = choice.MaxChoices;
+        string header = requiredCount == 1
+            ? "Wybierz 1 kartę"
+            : $"Wybierz {requiredCount} karty";
+        var headerText = new Text(_game.Assets.DefaultFont, header, _game.Scale.S(Theme.FontSizeNormal))
+        {
+            FillColor = Theme.TextPrimary
+        };
+        var headerBounds = headerText.GetLocalBounds();
+        headerText.Position = new Vector2f(centerX - headerBounds.Size.X / 2, y - _game.Scale.S(40f));
+        window.Draw(headerText);
+
+        // Oblicz widoczne karty
+        int visibleCount = Math.Min(MaxVisibleSelectionCards, _selectionOptions.Count);
+        float totalWidth = visibleCount * cardSize.X + (visibleCount - 1) * spacing;
+        float arrowSpace = _game.Scale.S(ArrowButtonSize + 15f);
+
+        // Strzałka lewa
+        bool canScrollLeft = _selectionScrollOffset > 0;
+        if (canScrollLeft)
+        {
+            var arrowSize = _game.Scale.S(ArrowButtonSize);
+            var arrowRect = new FloatRect(
+                new Vector2f(centerX - totalWidth / 2 - arrowSpace, y + (cardSize.Y - arrowSize) / 2),
+                new Vector2f(arrowSize, arrowSize)
+            );
+            DrawArrowButton(window, arrowRect, true, IsMouseOver(arrowRect));
+        }
+
+        // Karty
+        float startX = centerX - totalWidth / 2;
+        for (int i = 0; i < visibleCount; i++)
+        {
+            int optionIndex = _selectionScrollOffset + i;
+            if (optionIndex >= _selectionOptions.Count) break;
+
+            var option = _selectionOptions[optionIndex];
+            float cardX = startX + i * (cardSize.X + spacing);
+            var cardPos = new Vector2f(cardX, y);
+
+            // Tint: żółty dla zaznaczonej lub hovered
+            bool isSelected = _selectedIndices.Contains(optionIndex);
+            bool isHovered = _hoveredSelectionIndex == optionIndex;
+            Color? tint = (isSelected || isHovered) ? new Color(255, 255, 180) : null;
+
+            _cardRenderer.Draw(window, option.Card, cardPos, CardDisplayMode.Small, SelectionCardScale, tint);
+        }
+
+        // Strzałka prawa
+        bool canScrollRight = _selectionScrollOffset + MaxVisibleSelectionCards < _selectionOptions.Count;
+        if (canScrollRight)
+        {
+            var arrowSize = _game.Scale.S(ArrowButtonSize);
+            var arrowRect = new FloatRect(
+                new Vector2f(centerX + totalWidth / 2 + _game.Scale.S(15f), y + (cardSize.Y - arrowSize) / 2),
+                new Vector2f(arrowSize, arrowSize)
+            );
+            DrawArrowButton(window, arrowRect, false, IsMouseOver(arrowRect));
+        }
+
+        // Przycisk "Zatwierdź" (tylko dla multi-select gdy wybrano wymaganą liczbę)
+        if (requiredCount > 1 && _selectedIndices.Count == requiredCount)
+        {
+            var buttonWidth = _game.Scale.S(150f);
+            var buttonHeight = _game.Scale.S(40f);
+            var buttonRect = new FloatRect(
+                new Vector2f(centerX - buttonWidth / 2, y + cardSize.Y + _game.Scale.S(20f)),
+                new Vector2f(buttonWidth, buttonHeight)
+            );
+            DrawConfirmButton(window, buttonRect);
+        }
+    }
+
+    private void DrawArrowButton(RenderWindow window, FloatRect rect, bool isLeft, bool isHovered)
+    {
+        var button = new RectangleShape(new Vector2f(rect.Size.X, rect.Size.Y))
+        {
+            Position = new Vector2f(rect.Position.X, rect.Position.Y),
+            FillColor = isHovered ? new Color(80, 80, 90) : new Color(50, 50, 60),
+            OutlineColor = new Color(100, 100, 110),
+            OutlineThickness = 2f
+        };
+        window.Draw(button);
+
+        // Tekst strzałki
+        string arrow = isLeft ? "<" : ">";
+        var text = new Text(_game.Assets.DefaultFont, arrow, (uint)_game.Scale.S(24))
+        {
+            FillColor = Color.White
+        };
+        var bounds = text.GetLocalBounds();
+        text.Position = new Vector2f(
+            rect.Position.X + (rect.Size.X - bounds.Size.X) / 2,
+            rect.Position.Y + (rect.Size.Y - bounds.Size.Y) / 2 - _game.Scale.S(5f)
+        );
+        window.Draw(text);
+    }
+
+    private void DrawConfirmButton(RenderWindow window, FloatRect rect)
+    {
+        bool isHovered = IsMouseOver(rect);
+        var button = new RectangleShape(new Vector2f(rect.Size.X, rect.Size.Y))
+        {
+            Position = new Vector2f(rect.Position.X, rect.Position.Y),
+            FillColor = isHovered ? new Color(60, 120, 60) : new Color(40, 100, 40),
+            OutlineColor = new Color(80, 140, 80),
+            OutlineThickness = 2f
+        };
+        window.Draw(button);
+
+        var text = new Text(_game.Assets.DefaultFont, "Zatwierdź", _game.Scale.S(Theme.FontSizeSmall))
+        {
+            FillColor = Color.White
+        };
+        var bounds = text.GetLocalBounds();
+        text.Position = new Vector2f(
+            rect.Position.X + (rect.Size.X - bounds.Size.X) / 2,
+            rect.Position.Y + (rect.Size.Y - bounds.Size.Y) / 2 - _game.Scale.S(3f)
+        );
+        window.Draw(text);
+    }
+
+    private bool IsMouseOver(FloatRect rect)
+    {
+        return rect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y));
+    }
+
+    private bool CheckInlineSelectionHover()
+    {
+        if (!_inlineSelectionActive) return false;
+
+        _hoveredSelectionIndex = -1;
+
+        var cardSize = _cardRenderer.GetCardSize(SelectionCardScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+        float centerX = _game.Scale.CurrentWidth / 2;
+
+        int visibleCount = Math.Min(MaxVisibleSelectionCards, _selectionOptions.Count);
+        float totalWidth = visibleCount * cardSize.X + (visibleCount - 1) * spacing;
+        float startX = centerX - totalWidth / 2;
+
+        for (int i = 0; i < visibleCount; i++)
+        {
+            int optionIndex = _selectionScrollOffset + i;
+            if (optionIndex >= _selectionOptions.Count) break;
+
+            float cardX = startX + i * (cardSize.X + spacing);
+            var cardRect = new FloatRect(new Vector2f(cardX, y), cardSize);
+
+            if (cardRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
+            {
+                _hoveredSelectionIndex = optionIndex;
+                _hoveredCard = _selectionOptions[optionIndex].Card;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private FloatRect GetLeftArrowRect()
+    {
+        var cardSize = _cardRenderer.GetCardSize(SelectionCardScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+        float centerX = _game.Scale.CurrentWidth / 2;
+        int visibleCount = Math.Min(MaxVisibleSelectionCards, _selectionOptions.Count);
+        float totalWidth = visibleCount * cardSize.X + (visibleCount - 1) * spacing;
+        float arrowSpace = _game.Scale.S(ArrowButtonSize + 15f);
+
+        var arrowSize = _game.Scale.S(ArrowButtonSize);
+        return new FloatRect(
+            new Vector2f(centerX - totalWidth / 2 - arrowSpace, y + (cardSize.Y - arrowSize) / 2),
+            new Vector2f(arrowSize, arrowSize)
+        );
+    }
+
+    private FloatRect GetRightArrowRect()
+    {
+        var cardSize = _cardRenderer.GetCardSize(SelectionCardScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+        float centerX = _game.Scale.CurrentWidth / 2;
+        int visibleCount = Math.Min(MaxVisibleSelectionCards, _selectionOptions.Count);
+        float totalWidth = visibleCount * cardSize.X + (visibleCount - 1) * spacing;
+
+        var arrowSize = _game.Scale.S(ArrowButtonSize);
+        return new FloatRect(
+            new Vector2f(centerX + totalWidth / 2 + _game.Scale.S(15f), y + (cardSize.Y - arrowSize) / 2),
+            new Vector2f(arrowSize, arrowSize)
+        );
+    }
+
+    private FloatRect GetConfirmButtonRect()
+    {
+        var cardSize = _cardRenderer.GetCardSize(SelectionCardScale);
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+        float centerX = _game.Scale.CurrentWidth / 2;
+        var buttonWidth = _game.Scale.S(150f);
+        var buttonHeight = _game.Scale.S(40f);
+
+        return new FloatRect(
+            new Vector2f(centerX - buttonWidth / 2, y + cardSize.Y + _game.Scale.S(20f)),
+            new Vector2f(buttonWidth, buttonHeight)
+        );
+    }
+
+    #endregion
 
     #region Animation System
 

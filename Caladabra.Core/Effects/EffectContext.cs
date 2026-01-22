@@ -31,6 +31,11 @@ public sealed class EffectContext
     public Card? ChosenCard { get; set; }
 
     /// <summary>
+    /// PendingChoice z którego pochodzi wybór (dla efektów typu KeepChosenDiscardRest).
+    /// </summary>
+    public PendingChoice? PendingChoice { get; init; }
+
+    /// <summary>
     /// Flaga sygnalizująca pominięcie dobierania karty na końcu tury.
     /// Ustawiana przez SkipDraw.
     /// </summary>

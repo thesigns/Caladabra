@@ -305,7 +305,8 @@ public sealed class GameEngine
             State = State,
             SourceCard = choice.SourceCard ?? choice.Options.First().Card,
             Events = events,
-            ChosenIndices = indices
+            ChosenIndices = indices,
+            PendingChoice = choice
         };
 
         // Ustaw ChosenCard jeśli wybrano dokładnie jedną opcję
@@ -437,7 +438,7 @@ public sealed class GameEngine
             .Sum(m => m.Value);
 
         int totalToDraw = count + extraDraw;
-        int actuallyDrawn = 0;
+        var drawnCards = new List<Cards.Card>(); // Śledź dobrane karty dla Jasnowidzenia
 
         for (int i = 0; i < totalToDraw; i++)
         {
@@ -455,7 +456,7 @@ public sealed class GameEngine
             }
 
             State.Hand.Add(card);
-            actuallyDrawn++;
+            drawnCards.Add(card);
             events.Add(new CardDrawnEvent(card));
 
             // Wykonaj OnDraw
@@ -476,10 +477,11 @@ public sealed class GameEngine
             }
         }
 
-        // Jeśli dobrano dodatkowe karty przez Jasnowidzenie - wymuś odrzucenie
-        if (extraDraw > 0 && actuallyDrawn > count)
+        // Jeśli dobrano dodatkowe karty przez Jasnowidzenie - wybierz którą zachować
+        if (extraDraw > 0 && drawnCards.Count > count)
         {
-            var options = State.Hand.Cards.Select((c, idx) => new ChoiceOption
+            // Opcje tylko z nowo dobranych kart
+            var options = drawnCards.Select((c, idx) => new ChoiceOption
             {
                 Index = idx,
                 Card = c,
@@ -489,9 +491,9 @@ public sealed class GameEngine
             var choice = new PendingChoice
             {
                 Type = ChoiceType.DiscardFromHand,
-                Prompt = "Jasnowidzenie: wybierz kartę do odrzucenia.",
+                Prompt = "Jasnowidzenie: wybierz kartę do zachowania.",
                 Options = options,
-                Continuation = DiscardChosenFromHand.Instance,
+                Continuation = KeepChosenDiscardRest.Instance,
                 SourceCard = State.ActiveModifiers
                     .FirstOrDefault(m => m.Type == ModifierType.ExtraDrawThenDiscard)?.SourceCard,
                 EffectTrigger = "Discard" // Specjalny marker dla odtwarzania z JSON
