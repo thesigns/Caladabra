@@ -12,6 +12,17 @@ Caladabra/
 └── Docs/CaladabraGDD.md     # Game Design Document
 ```
 
+## Zasada Architektury: Core First
+
+**WAŻNE: Jeśli coś można naprawić w Core, napraw to w Core - nie w Desktop/Console.**
+
+- `Core` zawiera całą logikę gry i powinien działać niezależnie od UI
+- `Desktop` i `Console` to tylko "cienkie" warstwy prezentacji
+- Jeśli bug dotyczy mechaniki gry → napraw w `Core`
+- Jeśli trzeba dodać "workaround" w UI → zastanów się czy to nie powinno być w `Core`
+
+Przykład: Liczniki kart na stole (`ProcessStartOfTurn`) - powinny być automatycznie obsługiwane przez `GameEngine`, nie przez każdą warstwę UI osobno.
+
 ## Kluczowe Pliki
 
 | Plik | Opis |
