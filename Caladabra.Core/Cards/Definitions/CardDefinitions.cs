@@ -361,8 +361,8 @@ public static class CardDefinitions
             WillpowerCost = 5,
             Calories = 3,
             FlavorText = "Różnorodność buduje... monotonia rujnuje.",
-            Instruction = "Po zagraniu połóż tę kartę na Stole. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 5 Tłuszczu. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze.",
-            OnPlay = new PlaceOnTable(-1), // Permanentnie (-1 = bez limitu tur)
+            Instruction = "Po zagraniu połóż tę kartę na Stole na 4 tury. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 5 Tłuszczu. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze.",
+            OnPlay = new PlaceOnTable(4), // 4 tury
             OnTurnOnTable = new Conditional(
                 new CountUniqueFlavorsInZone(ZoneType.Stomach, 3),
                 new Sequence(

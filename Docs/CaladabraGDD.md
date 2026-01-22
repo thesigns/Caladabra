@@ -455,7 +455,7 @@ Na rewersie karty widać tylko jej **Smak**.
 | Nazwa | SW | Kal | Instrukcja |
 |-------|:--:|:---:|------------|
 | **Sos słodko-kwaśny** | 5 | 3 | Po zagraniu tej karty połóż ją na Stole na 3 tury. Przez 3 tury jeśli w Żołądku znajduje się karta o smaku słodkim i kwaśnym – zyskujesz 8 SW i redukujesz 3 Tłuszczu. W przeciwnym razie – tracisz 2 SW i zyskujesz 2 Tłuszczu. *„Idealne połączenie... albo kwaśny żart losu."* |
-| **Skutki dietetyczne** | 5 | 3 | Po zagraniu połóż tę kartę na Stole. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 5 Tłuszczu. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze. *„Różnorodność buduje... monotonia rujnuje."* |
+| **Skutki dietetyczne** | 5 | 3 | Po zagraniu połóż tę kartę na Stole na 4 tury. W każdej turze, w której w Żołądku masz 3 różne Smaki, dostajesz +3 SW i redukujesz 5 Tłuszczu. W przeciwnym wypadku tracisz 2 SW i przybierasz 4 Tłuszcze. *„Różnorodność buduje... monotonia rujnuje."* |
 | **Świąteczne śniadanie** | 6 | 2 | Po zagraniu tej karty połóż ją na Stole. Po 2 turach: jeśli na Stole będą 3 różne Smaki, zyskujesz 8 SW i redukujesz 7 Tłuszczu. Jeśli nie — tracisz 5 SW. Tak czy inaczej usuń tę kartę ze Stołu. *„Czasem musisz poczekać, żeby zobaczyć, czy coś miało sens…"* |
 
 ### Karty Umami (Mutacje)
