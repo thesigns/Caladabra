@@ -364,6 +364,39 @@ public sealed class GameEngine
             }
         }
 
+        // Sprawdź czy ręka przekracza limit (efekt uboczny Jasnowidzenia + OnDraw przerwanie)
+        if (State.Hand.Count > GameRules.MaxHandSize)
+        {
+            var extraDrawModifier = State.ActiveModifiers
+                .FirstOrDefault(m => m.Type == ModifierType.ExtraDrawThenDiscard);
+
+            if (extraDrawModifier != null)
+            {
+                // Wymuś wybór odrzucenia jednej karty (powtórzy się jeśli wciąż za dużo)
+                var options = State.Hand.Cards.Select((c, idx) => new ChoiceOption
+                {
+                    Index = idx,
+                    Card = c,
+                    DisplayText = c.ToString()
+                }).ToList();
+
+                var discardChoice = new PendingChoice
+                {
+                    Type = ChoiceType.DiscardFromHand,
+                    Prompt = $"Ręka przepełniona ({State.Hand.Count}/{GameRules.MaxHandSize}). Odrzuć kartę:",
+                    Options = options,
+                    Continuation = DiscardChosenFromHand.Instance,
+                    SourceCard = extraDrawModifier.SourceCard,
+                    EffectTrigger = "Discard"
+                };
+
+                State.Phase = GamePhase.AwaitingChoice;
+                State.PendingChoice = discardChoice;
+                events.Add(new ChoiceRequestedEvent(discardChoice));
+                return events;
+            }
+        }
+
         CheckEndConditions(events);
 
         return events;

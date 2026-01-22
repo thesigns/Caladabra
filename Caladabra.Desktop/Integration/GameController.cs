@@ -12,6 +12,7 @@ public sealed class GameController
 {
     private readonly GameEngine _engine;
     private readonly List<IGameEvent> _pendingEvents = new();
+    private readonly SessionLogger _sessionLogger = new();
 
     public GameState State => _engine.State;
     public int? Seed => State.Seed;
@@ -37,6 +38,10 @@ public sealed class GameController
         var initialEvents = engine.DrawInitialHand();
         controller._pendingEvents.AddRange(initialEvents);
 
+        // Loguj stan początkowy
+        controller._sessionLogger.Clear();
+        controller._sessionLogger.LogState(controller.State, "NewGame");
+
         return controller;
     }
 
@@ -50,6 +55,8 @@ public sealed class GameController
         var events = _engine.Play(handIndex);
         _pendingEvents.AddRange(events);
 
+        _sessionLogger.LogState(State, $"Play({handIndex})");
+
         return true;
     }
 
@@ -62,6 +69,8 @@ public sealed class GameController
 
         var events = _engine.Eat(handIndex);
         _pendingEvents.AddRange(events);
+
+        _sessionLogger.LogState(State, $"Eat({handIndex})");
 
         return true;
     }
@@ -77,6 +86,8 @@ public sealed class GameController
 
         var events = _engine.Choose(choiceIndex);
         _pendingEvents.AddRange(events);
+
+        _sessionLogger.LogState(State, $"Choose({choiceIndex})");
 
         return true;
     }
