@@ -46,6 +46,7 @@ public sealed class AssetManager
             throw new FileNotFoundException($"Texture not found: {fullPath}");
 
         texture = new Texture(fullPath);
+        texture.Smooth = true;  // Bilinear filtering - wygładza krawędzie
         _textures[relativePath] = texture;
         return texture;
     }

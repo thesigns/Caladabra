@@ -489,7 +489,7 @@ public sealed class GameEngine
             var choice = new PendingChoice
             {
                 Type = ChoiceType.DiscardFromHand,
-                Prompt = "Jasnowidzenie: wybierz kartę do odrzucenia:",
+                Prompt = "Jasnowidzenie: wybierz kartę do odrzucenia.",
                 Options = options,
                 Continuation = DiscardChosenFromHand.Instance,
                 SourceCard = State.ActiveModifiers

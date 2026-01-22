@@ -59,7 +59,7 @@ public static class CardDefinitions
                 new ReduceFat(8),
                 new ChooseCardFromZone(
                     ZoneType.Table,
-                    "Wybierz kartę ze Stołu do odrzucenia:",
+                    "Wybierz kartę ze Stołu do odrzucenia.",
                     continuation: new DiscardChosenCard(ZoneType.Table)
                 )
             )
@@ -250,7 +250,7 @@ public static class CardDefinitions
             OnPlay = new Sequence(
                 new ChooseCardFromZone(
                     ZoneType.CardList,
-                    "Wybierz gorzką kartę z Listy Kart Caladabra:",
+                    "Wybierz gorzką kartę z Listy Kart Caladabra.",
                     Flavor.Bitter,
                     continuation: AddChosenToHand.Instance
                 ),
@@ -274,7 +274,7 @@ public static class CardDefinitions
             Instruction = "Po zagraniu tej karty przenieś jedną wybraną kartę z Ręki do Żołądka i dobierz jeszcze jedną kartę. Zredukuj Tłuszcz o 3 jeśli karta przeniesiona była słona.",
             OnPlay = new ChooseCardFromZone(
                 ZoneType.Hand,
-                "Wybierz kartę z Ręki do przeniesienia do Żołądka:",
+                "Wybierz kartę z Ręki do przeniesienia do Żołądka.",
                 continuation: new Sequence(
                     MoveChosenToStomach.Instance,
                     new IfChosenCardHasFlavor(Flavor.Salty, new ReduceFat(3)),
@@ -298,7 +298,7 @@ public static class CardDefinitions
             OnPlay = new Sequence(
                 new ChooseCardFromZone(
                     ZoneType.Toilet,
-                    "Wybierz kartę z Kibelka do wzięcia do Ręki:",
+                    "Wybierz kartę z Kibelka do wzięcia do Ręki.",
                     continuation: AddChosenToHand.FromToilet
                 ),
                 SkipDraw.Instance
@@ -415,7 +415,7 @@ public static class CardDefinitions
             Instruction = "Po dobraniu tej karty do ręki wybierz jedną kartę z Listy Kart Caladabra. Kwantowa próżnia staje się tą kartą.",
             OnDraw = new ChooseCardFromZone(
                 ZoneType.CardList,
-                "Wybierz kartę z Listy Kart Caladabra - Kwantowa próżnia stanie się tą kartą:",
+                "Wybierz kartę z Listy Kart Caladabra - Kwantowa próżnia stanie się tą kartą.",
                 continuation: TransformIntoChosen.Instance
             )
         });
@@ -433,7 +433,7 @@ public static class CardDefinitions
             Instruction = "Po zagraniu tej karty wybierz dowolną kartę na Stole. Zmieniasz instrukcję karty na: Usuń tę kartę ze stołu w następnej turze.",
             OnPlay = new ChooseCardFromZone(
                 ZoneType.Table,
-                "Wybierz kartę na Stole do usunięcia w następnej turze:",
+                "Wybierz kartę na Stole do usunięcia w następnej turze.",
                 continuation: new SetTableCounterTo(1)
             )
         });

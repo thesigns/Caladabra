@@ -3,7 +3,10 @@ using SFML.Window;
 using SFML.System;
 using Caladabra.Core.Cards;
 using Caladabra.Core.Engine;
+using Caladabra.Core.Events;
 using Caladabra.Core.State;
+using Caladabra.Core.Zones;
+using Caladabra.Desktop.Animation;
 using Caladabra.Desktop.Core;
 using Caladabra.Desktop.Rendering;
 using Caladabra.Desktop.UI;
@@ -47,6 +50,14 @@ public sealed class GameScene : IScene
     private FloatRect _cardListButtonRect;
     private bool _cardListSceneOpen = false;
 
+    // Animation system
+    private AnimationManager _animationManager = null!;
+
+    // Elevation system - animowane wysuwanie grywalnych kart
+    private readonly Dictionary<string, float> _cardElevation = new();
+    private const float ElevationRatio = 0.20f;    // 20% wysokości karty
+    private const float ElevationSpeed = 8f;       // Szybkość animacji (jednostek/s)
+
     // Layout constants (bazowe dla 1920x1080)
     private const float PaddingVertical = 20f;
     private const float PaddingHorizontal = 35f;  // większy margines z boków
@@ -72,6 +83,7 @@ public sealed class GameScene : IScene
 
         _cardRenderer = new CardRenderer(font, _game.Scale, _game.Assets);
         _zoneRenderer = new ZoneRenderer(_cardRenderer, font, _game.Scale);
+        _animationManager = new AnimationManager();
 
         // Status bar labels
         _fatLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal))
@@ -135,6 +147,9 @@ public sealed class GameScene : IScene
 
     private void HandleLeftClick()
     {
+        // Blokada interakcji podczas animacji
+        if (_animationManager.IsAnimating) return;
+
         // Gra skończona - nie reaguj na kliknięcia (z wyjątkiem przeglądania)
         if (_controller.IsGameOver)
         {
@@ -195,6 +210,9 @@ public sealed class GameScene : IScene
 
     private void HandleRightClick()
     {
+        // Blokada interakcji podczas animacji
+        if (_animationManager.IsAnimating) return;
+
         // Gra skończona - nie reaguj na kliknięcia
         if (_controller.IsGameOver) return;
 
@@ -217,6 +235,15 @@ public sealed class GameScene : IScene
 
     public void Update(float deltaTime)
     {
+        // Process game events and trigger animations
+        ProcessGameEvents();
+
+        // Update animations
+        _animationManager.Update(deltaTime);
+
+        // Update card elevation (playable cards raised)
+        UpdateCardElevations(deltaTime);
+
         // Update error message timer
         if (_errorMessageTimer > 0)
         {
@@ -254,9 +281,54 @@ public sealed class GameScene : IScene
         }
         else
         {
-            _infoText.DisplayedString = "ESC = wyjście | LPM = zagraj | PPM = zjedz";
-            _infoText.FillColor = Theme.TextSecondary;
+            // Sprawdź czy gracz może zagrać jakąkolwiek kartę
+            bool canPlayAny = State.Hand.Cards.Any(c => State.Willpower >= c.WillpowerCost);
+
+            if (canPlayAny)
+            {
+                _infoText.DisplayedString = "Zagraj (LPM) lub zjedz (PPM) kartę z ręki.";
+                _infoText.FillColor = new Color(255, 200, 100);  // Żółty jak reszta
+            }
+            else
+            {
+                _infoText.DisplayedString = "Nie masz dość siły woli! Zjedz (PPM) kartę z ręki.";
+                _infoText.FillColor = new Color(255, 150, 100);
+            }
         }
+    }
+
+    private void UpdateCardElevations(float deltaTime)
+    {
+        if (_controller.IsGameOver) return;
+
+        var handCards = State.Hand.Cards.ToList();
+        var handCardIds = new HashSet<string>(handCards.Select(c => c.Id));
+
+        foreach (var card in handCards)
+        {
+            bool isPlayable = State.Willpower >= card.WillpowerCost;
+            float target = isPlayable ? 1f : 0f;
+
+            if (!_cardElevation.TryGetValue(card.Id, out var current))
+            {
+                // Nowa karta - ustaw natychmiast jeśli nie ma animacji,
+                // lub startuj od 0 dla kart dobranych w trakcie gry
+                current = _animationManager.IsAnimating ? 0f : target;
+            }
+
+            // Płynna interpolacja w kierunku celu
+            if (current < target)
+                current = Math.Min(current + deltaTime * ElevationSpeed, target);
+            else if (current > target)
+                current = Math.Max(current - deltaTime * ElevationSpeed, target);
+
+            _cardElevation[card.Id] = current;
+        }
+
+        // Usuń karty które nie są już w ręce
+        var toRemove = _cardElevation.Keys.Where(id => !handCardIds.Contains(id)).ToList();
+        foreach (var id in toRemove)
+            _cardElevation.Remove(id);
     }
 
     private void UpdateHoveredCard()
@@ -496,6 +568,9 @@ public sealed class GameScene : IScene
         // Info text at bottom
         DrawInfoBar(window);
 
+        // Animations (na wierzchu, nad kartami ale pod UI)
+        _animationManager.Render(window);
+
         // Error message (na wierzchu)
         DrawErrorMessage(window);
     }
@@ -718,22 +793,17 @@ public sealed class GameScene : IScene
             int cardIndex = cards.Count - 1 - i;
             var card = cards[cardIndex];
 
+            // Skip cards that are currently being animated
+            if (_animationManager.IsCardAnimating(card.Id)) continue;
+
             var cardPos = new Vector2f(x, cardY + i * (cardSize.Y + spacing));
             bool isHovered = cardIndex == _hoveredStomachIndex;
             bool isChoiceOption = isChoosing && State.PendingChoice!.Options.Any(o => o.Card.Id == card.Id);
 
-            // Highlight if hovered or choice option
-            if (isHovered || isChoiceOption)
-            {
-                var glowRect = new RectangleShape(cardSize + new Vector2f(_game.Scale.S(4f), _game.Scale.S(4f)))
-                {
-                    Position = cardPos - new Vector2f(_game.Scale.S(2f), _game.Scale.S(2f)),
-                    FillColor = isChoosing ? new Color(255, 200, 100, 80) : new Color(255, 255, 255, 60)
-                };
-                window.Draw(glowRect);
-            }
+            // Tint dla podświetlenia (hover lub choice)
+            Color? tint = (isHovered || isChoiceOption) ? new Color(255, 255, 180) : null;
 
-            _cardRenderer.Draw(window, card, cardPos, CardDisplayMode.Tiny, ZoneRenderer.StomachScale);
+            _cardRenderer.Draw(window, card, cardPos, CardDisplayMode.Tiny, ZoneRenderer.StomachScale, tint);
         }
 
         if (cards.Count > 6)
@@ -776,31 +846,22 @@ public sealed class GameScene : IScene
 
         for (int i = 0; i < cards.Count; i++)
         {
+            var card = cards[i];
+
+            // Skip cards that are currently being animated
+            if (_animationManager.IsCardAnimating(card.Id)) continue;
+
             float cardX = startX + i * (cardSize.X + spacing);
             float cardY = y;
             float scale = ZoneRenderer.TableScale;
 
             bool isHovered = i == _hoveredTableIndex;
-            bool isChoiceOption = isChoosing && State.PendingChoice!.Options.Any(o => o.Card.Id == cards[i].Id);
+            bool isChoiceOption = isChoosing && State.PendingChoice!.Options.Any(o => o.Card.Id == card.Id);
 
-            // Highlight if hovered or choice option
-            if (isHovered)
-            {
-                cardY -= _game.Scale.S(10f);
-                scale = 0.95f;
-            }
+            // Tint dla podświetlenia (hover lub choice) - bez unoszenia/powiększania
+            Color? tint = (isHovered || isChoiceOption) ? new Color(255, 255, 180) : null;
 
-            if (isHovered || isChoiceOption)
-            {
-                var glowRect = new RectangleShape(_cardRenderer.GetCardSize(scale) + new Vector2f(_game.Scale.S(6f), _game.Scale.S(6f)))
-                {
-                    Position = new Vector2f(cardX - _game.Scale.S(3f), cardY - _game.Scale.S(3f)),
-                    FillColor = isChoosing ? new Color(255, 200, 100, 80) : new Color(255, 255, 255, 60)
-                };
-                window.Draw(glowRect);
-            }
-
-            _cardRenderer.Draw(window, cards[i], new Vector2f(cardX, cardY), CardDisplayMode.Small, scale);
+            _cardRenderer.Draw(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, tint);
         }
     }
 
@@ -810,66 +871,69 @@ public sealed class GameScene : IScene
         float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
 
         var cards = State.Hand.Cards.ToList();
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
 
-        // Label
+        if (cards.Count > 0)
+        {
+            // Calculate card positions
+            float spacing = cardSize.X * CardSpacingRatio;
+            float totalWidth = cards.Count * cardSize.X + (cards.Count - 1) * spacing;
+            float startX = centerX - totalWidth / 2;
+
+            bool isChoosing = _controller.IsAwaitingChoice &&
+                              (State.PendingChoice?.Type == ChoiceType.SelectFromHand ||
+                               State.PendingChoice?.Type == ChoiceType.DiscardFromHand);
+
+            // Draw cards with highlight for hovered one
+            for (int i = 0; i < cards.Count; i++)
+            {
+                var card = cards[i];
+
+                // Skip cards that are currently being animated
+                if (_animationManager.IsCardAnimating(card.Id)) continue;
+
+                float cardX = startX + i * (cardSize.X + spacing);
+                float cardY = y;
+                float scale = ZoneRenderer.HandScale;
+
+                // Wysunięcie dla grywalnych kart (animowane)
+                if (_cardElevation.TryGetValue(card.Id, out var elevation) && elevation > 0)
+                {
+                    cardY -= cardSize.Y * ElevationRatio * elevation;
+                }
+
+                bool isHovered = i == _hoveredHandIndex;
+                bool isChoiceOption = isChoosing && State.PendingChoice!.Options.Any(o => o.Card.Id == card.Id);
+
+                // Tint dla podświetlenia (hover lub choice) - bez dodatkowego unoszenia
+                Color? tint = (isHovered || isChoiceOption) ? new Color(255, 255, 180) : null;
+
+                _cardRenderer.Draw(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, tint);
+            }
+        }
+
+        // Label pod kartami
         var label = new Text(_game.Assets.DefaultFont, "Ręka", _game.Scale.S(Theme.FontSizeSmall))
         {
             FillColor = Theme.TextSecondary
         };
         var labelBounds = label.GetLocalBounds();
-        label.Position = new Vector2f(centerX - labelBounds.Size.X / 2, y - _game.Scale.S(25f));
+        label.Position = new Vector2f(centerX - labelBounds.Size.X / 2, y + cardSize.Y + _game.Scale.S(10f));
         window.Draw(label);
-
-        if (cards.Count == 0) return;
-
-        // Calculate card positions
-        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
-        float spacing = cardSize.X * CardSpacingRatio;
-        float totalWidth = cards.Count * cardSize.X + (cards.Count - 1) * spacing;
-        float startX = centerX - totalWidth / 2;
-
-        bool isChoosing = _controller.IsAwaitingChoice &&
-                          (State.PendingChoice?.Type == ChoiceType.SelectFromHand ||
-                           State.PendingChoice?.Type == ChoiceType.DiscardFromHand);
-
-        // Draw cards with highlight for hovered one
-        for (int i = 0; i < cards.Count; i++)
-        {
-            float cardX = startX + i * (cardSize.X + spacing);
-            float cardY = y;
-            float scale = ZoneRenderer.HandScale;
-
-            bool isHovered = i == _hoveredHandIndex;
-            bool isChoiceOption = isChoosing && State.PendingChoice!.Options.Any(o => o.Card.Id == cards[i].Id);
-
-            // Lift and slightly enlarge hovered card
-            if (isHovered)
-            {
-                cardY -= _game.Scale.S(15f);
-                scale = 1.05f;
-            }
-
-            if (isHovered || isChoiceOption)
-            {
-                var glowRect = new RectangleShape(_cardRenderer.GetCardSize(scale) + new Vector2f(_game.Scale.S(6f), _game.Scale.S(6f)))
-                {
-                    Position = new Vector2f(cardX - _game.Scale.S(3f), cardY - _game.Scale.S(3f)),
-                    FillColor = isChoosing ? new Color(255, 200, 100, 80) : new Color(255, 255, 255, 60)
-                };
-                window.Draw(glowRect);
-            }
-
-            _cardRenderer.Draw(window, cards[i], new Vector2f(cardX, cardY), CardDisplayMode.Small, scale);
-        }
     }
 
     private void DrawInfoBar(RenderWindow window)
     {
+        // Zawsze duża czcionka i pozycja między stołem a ręką
+        _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeTitle);
         var bounds = _infoText.GetLocalBounds();
+        float y = _game.Scale.CurrentHeight * 0.55f;
+
         _infoText.Position = new Vector2f(
             (_game.Scale.CurrentWidth - bounds.Size.X) / 2,
-            _game.Scale.CurrentHeight - _game.Scale.S(30f)
+            y
         );
+
         window.Draw(_infoText);
     }
 
@@ -972,4 +1036,267 @@ public sealed class GameScene : IScene
     {
         _cardListSceneOpen = false;
     }
+
+    #region Animation System
+
+    /// <summary>
+    /// Przetwarza eventy z silnika gry i tworzy odpowiednie animacje.
+    /// </summary>
+    private void ProcessGameEvents()
+    {
+        var events = _controller.FlushEvents();
+
+        foreach (var evt in events)
+        {
+            switch (evt)
+            {
+                case CardDrawnEvent drawn:
+                    AnimateCardDraw(drawn.Card);
+                    break;
+
+                case CardPlayedEvent played:
+                    // Karta została zagrana - animuj z ręki do stołu lub kibelka
+                    // W tym momencie karta już jest w nowej strefie w State
+                    AnimateCardFromHand(played.Card, played.HandIndex);
+                    break;
+
+                case CardEatenEvent eaten:
+                    // Karta została zjedzona - animuj z ręki do żołądka
+                    AnimateCardEat(eaten.Card, eaten.HandIndex);
+                    break;
+
+                case CardDiscardedEvent discarded:
+                    // Karta trafiła do kibelka
+                    AnimateCardDiscard(discarded.Card, discarded.FromZone);
+                    break;
+
+                // Inne eventy (FatChanged, WillpowerChanged, etc.) - można dodać animacje liczników później
+            }
+        }
+    }
+
+    /// <summary>
+    /// Animuje dobieranie karty ze spiżarni do ręki.
+    /// </summary>
+    private void AnimateCardDraw(Card card)
+    {
+        var startPos = GetPantryPosition();
+        var endPos = GetHandCardPosition(State.Hand.Count - 1);
+
+        var animation = new CardMoveAnimation(
+            _cardRenderer,
+            card,
+            startPos,
+            endPos,
+            duration: 0.25f,
+            easing: Easing.EaseOutBack,
+            startScale: ZoneRenderer.HandScale,
+            endScale: ZoneRenderer.HandScale,
+            startMode: CardDisplayMode.Back,
+            endMode: CardDisplayMode.Small
+        );
+
+        _animationManager.StartImmediate(animation);
+    }
+
+    /// <summary>
+    /// Animuje kartę zagraną z ręki (do stołu lub kibelka).
+    /// </summary>
+    private void AnimateCardFromHand(Card card, int handIndex)
+    {
+        var startPos = GetHandCardPositionForCount(handIndex, State.Hand.Count + 1); // +1 bo karta już usunięta
+
+        // Sprawdź gdzie karta trafiła
+        Vector2f endPos;
+        float endScale;
+        CardDisplayMode endMode;
+
+        if (State.Table.Cards.Any(c => c.Id == card.Id))
+        {
+            // Karta trafiła na stół
+            int tableIndex = State.Table.Cards.ToList().FindIndex(c => c.Id == card.Id);
+            endPos = GetTableCardPosition(tableIndex);
+            endScale = ZoneRenderer.TableScale;
+            endMode = CardDisplayMode.Small;
+        }
+        else
+        {
+            // Karta trafiła do kibelka
+            endPos = GetToiletPosition();
+            endScale = ZoneRenderer.HandScale;
+            endMode = CardDisplayMode.Back;
+        }
+
+        var animation = new CardMoveAnimation(
+            _cardRenderer,
+            card,
+            startPos,
+            endPos,
+            duration: 0.3f,
+            easing: Easing.EaseInOutCubic,
+            startScale: ZoneRenderer.HandScale,
+            endScale: endScale,
+            startMode: CardDisplayMode.Small,
+            endMode: endMode
+        );
+
+        _animationManager.StartImmediate(animation);
+    }
+
+    /// <summary>
+    /// Animuje zjedzenie karty (z ręki do żołądka).
+    /// </summary>
+    private void AnimateCardEat(Card card, int handIndex)
+    {
+        var startPos = GetHandCardPositionForCount(handIndex, State.Hand.Count + 1); // +1 bo karta już usunięta
+        var endPos = GetStomachCardPosition(0); // Najnowsza karta na górze
+
+        var animation = new CardMoveAnimation(
+            _cardRenderer,
+            card,
+            startPos,
+            endPos,
+            duration: 0.3f,
+            easing: Easing.EaseInOutCubic,
+            startScale: ZoneRenderer.HandScale,
+            endScale: ZoneRenderer.StomachScale,
+            startMode: CardDisplayMode.Small,
+            endMode: CardDisplayMode.Tiny
+        );
+
+        _animationManager.StartImmediate(animation);
+    }
+
+    /// <summary>
+    /// Animuje odrzucenie karty do kibelka.
+    /// </summary>
+    private void AnimateCardDiscard(Card card, ZoneType fromZone)
+    {
+        Vector2f startPos = fromZone switch
+        {
+            ZoneType.Hand => GetHandCardPosition(0),
+            ZoneType.Table => GetTableCardPosition(0),
+            ZoneType.Stomach => GetStomachCardPosition(0),
+            _ => GetPantryPosition()
+        };
+
+        var (startScale, startMode) = GetZoneScaleAndMode(fromZone);
+        var endPos = GetToiletPosition();
+
+        var animation = new CardMoveAnimation(
+            _cardRenderer,
+            card,
+            startPos,
+            endPos,
+            duration: 0.25f,
+            easing: Easing.EaseInOutQuad,
+            startScale: startScale,
+            endScale: ZoneRenderer.HandScale,
+            startMode: startMode,
+            endMode: CardDisplayMode.Back
+        );
+
+        _animationManager.StartImmediate(animation);
+    }
+
+    #endregion
+
+    #region Position Helpers
+
+    /// <summary>
+    /// Oblicza pozycję karty w ręce dla bieżącej liczby kart.
+    /// </summary>
+    private Vector2f GetHandCardPosition(int index)
+    {
+        return GetHandCardPositionForCount(index, State.Hand.Count);
+    }
+
+    /// <summary>
+    /// Oblicza pozycję karty w ręce dla określonej liczby kart.
+    /// </summary>
+    private Vector2f GetHandCardPositionForCount(int index, int cardCount)
+    {
+        if (cardCount == 0) return new Vector2f(0, 0);
+
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float totalWidth = cardCount * cardSize.X + (cardCount - 1) * spacing;
+
+        float centerX = _game.Scale.CurrentWidth / 2;
+        float startX = centerX - totalWidth / 2;
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
+
+        return new Vector2f(startX + index * (cardSize.X + spacing), y);
+    }
+
+    /// <summary>
+    /// Oblicza pozycję karty na stole.
+    /// </summary>
+    private Vector2f GetTableCardPosition(int index)
+    {
+        int cardCount = State.Table.Count;
+        if (cardCount == 0) cardCount = 1;
+
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.TableScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float totalWidth = cardCount * cardSize.X + (cardCount - 1) * spacing;
+
+        float centerX = _game.Scale.CurrentWidth / 2;
+        float startX = centerX - totalWidth / 2;
+        float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
+
+        return new Vector2f(startX + index * (cardSize.X + spacing), y);
+    }
+
+    /// <summary>
+    /// Oblicza pozycję karty w żołądku.
+    /// </summary>
+    private Vector2f GetStomachCardPosition(int visualIndex)
+    {
+        float x = _game.Scale.CurrentWidth - _game.Scale.S(SidePanelWidth + PaddingHorizontal);
+        float baseY = _game.Scale.S(StatusTextHeight + PaddingVertical + 25f);
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.StomachScale);
+        float spacing = _game.Scale.S(StomachCardSpacing);
+
+        return new Vector2f(x, baseY + visualIndex * (cardSize.Y + spacing));
+    }
+
+    /// <summary>
+    /// Zwraca pozycję spiżarni.
+    /// </summary>
+    private Vector2f GetPantryPosition()
+    {
+        float x = _game.Scale.S(PaddingHorizontal);
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
+        return new Vector2f(x, y);
+    }
+
+    /// <summary>
+    /// Zwraca pozycję kibelka.
+    /// </summary>
+    private Vector2f GetToiletPosition()
+    {
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
+        float x = _game.Scale.CurrentWidth - _game.Scale.S(PaddingHorizontal) - cardSize.X;
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
+        return new Vector2f(x, y);
+    }
+
+    /// <summary>
+    /// Zwraca skalę i tryb wyświetlania dla danej strefy.
+    /// </summary>
+    private (float scale, CardDisplayMode mode) GetZoneScaleAndMode(ZoneType zone)
+    {
+        return zone switch
+        {
+            ZoneType.Pantry => (ZoneRenderer.HandScale, CardDisplayMode.Back),
+            ZoneType.Hand => (ZoneRenderer.HandScale, CardDisplayMode.Small),
+            ZoneType.Table => (ZoneRenderer.TableScale, CardDisplayMode.Small),
+            ZoneType.Stomach => (ZoneRenderer.StomachScale, CardDisplayMode.Tiny),
+            ZoneType.Toilet => (ZoneRenderer.HandScale, CardDisplayMode.Back),
+            _ => (1.0f, CardDisplayMode.Small)
+        };
+    }
+
+    #endregion
 }

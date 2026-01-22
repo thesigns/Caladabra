@@ -50,8 +50,10 @@ public sealed class CardRenderer
     /// <param name="position">Pozycja lewego górnego rogu</param>
     /// <param name="mode">Tryb wyświetlania (Full, Small, Tiny, Back)</param>
     /// <param name="scale">Skala karty (1.0 = rozmiar bazowy)</param>
+    /// <param name="tint">Opcjonalny kolor tintu (podświetlenie)</param>
     public void Draw(IRenderTarget target, Card card, Vector2f position,
-                     CardDisplayMode mode = CardDisplayMode.Full, float scale = 1.0f)
+                     CardDisplayMode mode = CardDisplayMode.Full, float scale = 1.0f,
+                     Color? tint = null)
     {
         // Rozmiar obliczany z proporcji i skali
         float height = _scale.S(BaseHeight * scale);
@@ -64,14 +66,14 @@ public sealed class CardRenderer
         // Tryb Back - rewers karty (tekstura + ikona)
         if (mode == CardDisplayMode.Back)
         {
-            DrawCardBack(target, position, width, height, card.Flavor, padding);
+            DrawCardBack(target, position, width, height, card.Flavor, padding, tint);
             return;
         }
 
         // Tryb Tiny - tło + ikona smaku na środku
         if (mode == CardDisplayMode.Tiny)
         {
-            DrawCardBackground(target, position, width, height, card.Flavor, borderWidth);
+            DrawCardBackground(target, position, width, height, card.Flavor, borderWidth, tint);
 
             // Ikona smaku na środku (50% wysokości karty)
             var icon = _assets.GetFlavorIcon(card.Flavor);
@@ -86,7 +88,7 @@ public sealed class CardRenderer
         }
 
         // Tryby Full i Small
-        DrawCardBackground(target, position, width, height, card.Flavor, borderWidth);
+        DrawCardBackground(target, position, width, height, card.Flavor, borderWidth, tint);
         DrawTopBar(target, card, position, width, height, padding);
         DrawName(target, card.Name, position, width, height);
         DrawIllustration(target, card.Flavor, position, width, height);
@@ -110,36 +112,38 @@ public sealed class CardRenderer
         float illustrationHeight = height * IllustrationRatio;
 
         var icon = _assets.GetFlavorIcon(flavor);
-        var iconSize = illustrationHeight * 0.7f;
+        var iconSize = illustrationHeight * 0.85f;
         var iconSprite = new Sprite(icon)
         {
-            Position = pos + new Vector2f((width - iconSize) / 2, topOffset + (illustrationHeight - iconSize) / 2),
+            Position = pos + new Vector2f((width - iconSize) / 2, topOffset + (illustrationHeight - iconSize) / 2 + illustrationHeight * 0.1f),
             Scale = new Vector2f(iconSize / icon.Size.X, iconSize / icon.Size.Y)
         };
         target.Draw(iconSprite);
     }
 
     private void DrawCardBackground(IRenderTarget target, Vector2f pos, float width, float height,
-                                     Flavor flavor, float borderWidth)
+                                     Flavor flavor, float borderWidth, Color? tint = null)
     {
         var texture = _assets.GetCardFront(flavor);
         var sprite = new Sprite(texture)
         {
             Position = pos,
-            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y)
+            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y),
+            Color = tint ?? Color.White
         };
         target.Draw(sprite);
     }
 
     private void DrawCardBack(IRenderTarget target, Vector2f pos, float width, float height,
-                               Flavor flavor, float padding)
+                               Flavor flavor, float padding, Color? tint = null)
     {
         // Tło rewersu z tekstury
         var texture = _assets.GetCardBack(flavor);
         var sprite = new Sprite(texture)
         {
             Position = pos,
-            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y)
+            Scale = new Vector2f(width / texture.Size.X, height / texture.Size.Y),
+            Color = tint ?? Color.White
         };
         target.Draw(sprite);
 

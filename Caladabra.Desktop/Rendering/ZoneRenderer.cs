@@ -18,7 +18,7 @@ public sealed class ZoneRenderer
 
     // Domyślne skale dla stref
     public const float HandScale = 1.0f;
-    public const float TableScale = 0.9f;
+    public const float TableScale = 1.0f;
     public const float StomachScale = 0.5f;
     public const float PantryScale = 0.6f;
     public const float ToiletScale = 0.5f;
