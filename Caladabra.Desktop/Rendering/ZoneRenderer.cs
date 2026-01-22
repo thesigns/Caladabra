@@ -43,12 +43,28 @@ public sealed class ZoneRenderer
     }
 
     /// <summary>
-    /// Rysuje strefę stołu (Table) - karty w poziomym rzędzie.
+    /// Rysuje strefę stołu (Table) - karty w poziomym rzędzie z licznikami.
     /// </summary>
-    public void DrawTable(IRenderTarget target, IReadOnlyList<Card> cards, Vector2f position, float? customScale = null)
+    public void DrawTable(IRenderTarget target, IReadOnlyList<TableEntry> entries, Vector2f position, float? customScale = null)
     {
+        if (entries.Count == 0) return;
+
         float scale = customScale ?? TableScale;
-        DrawHorizontalCards(target, cards, position, CardDisplayMode.Small, scale);
+        var cardSize = _cardRenderer.GetCardSize(scale);
+        float spacing = cardSize.X * CardSpacingRatio;
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            var entry = entries[i];
+            var cardPos = new Vector2f(position.X + i * (cardSize.X + spacing), position.Y);
+            _cardRenderer.Draw(target, entry.Card, cardPos, CardDisplayMode.Small, scale);
+
+            // Rysuj licznik jeśli karta go ma
+            if (entry.TurnsRemaining.HasValue && entry.TurnsRemaining.Value > 0)
+            {
+                _cardRenderer.DrawCounter(target, cardPos, scale, entry.TurnsRemaining.Value);
+            }
+        }
     }
 
     /// <summary>

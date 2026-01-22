@@ -919,7 +919,7 @@ public sealed class GameScene : IScene
         var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.TableScale);
         float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;  // przesunięte w dół o 1/2 wysokości karty
 
-        var cards = State.Table.Cards.ToList();
+        var entries = State.Table.Entries.ToList();
 
         // Label
         var label = new Text(_game.Assets.DefaultFont, "Stół", _game.Scale.S(Theme.FontSizeSmall))
@@ -930,19 +930,20 @@ public sealed class GameScene : IScene
         label.Position = new Vector2f(centerX - labelBounds.Size.X / 2, y - _game.Scale.S(25f));
         window.Draw(label);
 
-        if (cards.Count == 0) return;
+        if (entries.Count == 0) return;
 
         // Calculate card positions
         float spacing = cardSize.X * CardSpacingRatio;
-        float totalWidth = cards.Count * cardSize.X + (cards.Count - 1) * spacing;
+        float totalWidth = entries.Count * cardSize.X + (entries.Count - 1) * spacing;
         float startX = centerX - totalWidth / 2;
 
         bool isChoosing = _controller.IsAwaitingChoice &&
                           State.PendingChoice?.Type == ChoiceType.SelectFromTable;
 
-        for (int i = 0; i < cards.Count; i++)
+        for (int i = 0; i < entries.Count; i++)
         {
-            var card = cards[i];
+            var entry = entries[i];
+            var card = entry.Card;
 
             // Skip cards that are currently being animated
             if (_animationManager.IsCardAnimating(card.Id)) continue;
@@ -958,6 +959,12 @@ public sealed class GameScene : IScene
             Color? tint = (isHovered || isChoiceOption) ? new Color(255, 255, 180) : null;
 
             _cardRenderer.Draw(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, tint);
+
+            // Rysuj licznik jeśli karta go ma
+            if (entry.TurnsRemaining.HasValue && entry.TurnsRemaining.Value > 0)
+            {
+                _cardRenderer.DrawCounter(window, new Vector2f(cardX, cardY), scale, entry.TurnsRemaining.Value);
+            }
         }
     }
 

@@ -292,4 +292,41 @@ public sealed class CardRenderer
         float width = height * AspectRatio;
         return new Vector2f(width, height);
     }
+
+    /// <summary>
+    /// Rysuje licznik tury na karcie (duża cyfra po prawej stronie ilustracji).
+    /// </summary>
+    public void DrawCounter(IRenderTarget target, Vector2f cardPosition, float cardScale, int counter)
+    {
+        if (counter <= 0) return;
+
+        float height = _scale.S(BaseHeight * cardScale);
+        float width = height * AspectRatio;
+
+        // Pozycja: prawa strona ilustracji
+        float topOffset = height * (TopBarRatio + NameRatio);
+        float illustrationHeight = height * IllustrationRatio;
+
+        // Duży font (35% wysokości ilustracji)
+        uint fontSize = (uint)(illustrationHeight * 0.35f);
+
+        var counterText = new Text(_font, counter.ToString(), fontSize)
+        {
+            FillColor = Color.White,
+            OutlineColor = Color.Black,
+            OutlineThickness = _scale.S(2f),
+            Style = Text.Styles.Bold
+        };
+
+        var bounds = counterText.GetLocalBounds();
+        float padding = _scale.S(8f);
+
+        // Pozycja: prawy dolny róg ilustracji
+        counterText.Position = new Vector2f(
+            cardPosition.X + width - bounds.Size.X - padding,
+            cardPosition.Y + topOffset + illustrationHeight - bounds.Size.Y - padding
+        );
+
+        target.Draw(counterText);
+    }
 }
