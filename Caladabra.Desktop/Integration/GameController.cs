@@ -12,7 +12,6 @@ public sealed class GameController
 {
     private readonly GameEngine _engine;
     private readonly List<IGameEvent> _pendingEvents = new();
-    private bool _turnStartProcessed = false;
 
     public GameState State => _engine.State;
     public int? Seed => State.Seed;
@@ -48,14 +47,8 @@ public sealed class GameController
     {
         if (!CanPlayCard(handIndex)) return false;
 
-        EnsureTurnStartProcessed();
-
         var events = _engine.Play(handIndex);
         _pendingEvents.AddRange(events);
-
-        // Resetuj flagę dla nowej tury
-        if (State.Phase == GamePhase.AwaitingAction)
-            _turnStartProcessed = false;
 
         return true;
     }
@@ -67,30 +60,10 @@ public sealed class GameController
     {
         if (!CanEatCard(handIndex)) return false;
 
-        EnsureTurnStartProcessed();
-
         var events = _engine.Eat(handIndex);
         _pendingEvents.AddRange(events);
 
-        // Resetuj flagę dla nowej tury
-        if (State.Phase == GamePhase.AwaitingAction)
-            _turnStartProcessed = false;
-
         return true;
-    }
-
-    /// <summary>
-    /// Przetwarza początek tury (liczniki na stole, OnTurnOnTable).
-    /// Wywoływane automatycznie przed pierwszą akcją w turze.
-    /// </summary>
-    private void EnsureTurnStartProcessed()
-    {
-        if (_turnStartProcessed || State.Phase != GamePhase.AwaitingAction)
-            return;
-
-        var events = _engine.ProcessStartOfTurn();
-        _pendingEvents.AddRange(events);
-        _turnStartProcessed = true;
     }
 
     /// <summary>
@@ -104,6 +77,7 @@ public sealed class GameController
 
         var events = _engine.Choose(choiceIndex);
         _pendingEvents.AddRange(events);
+
         return true;
     }
 

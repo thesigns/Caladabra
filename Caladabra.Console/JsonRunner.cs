@@ -84,12 +84,6 @@ public static class JsonRunner
 
         var engine = new GameEngine(state);
 
-        // Przetwórz początek tury jeśli trzeba
-        if (state.Phase == GamePhase.AwaitingAction)
-        {
-            engine.ProcessStartOfTurn();
-        }
-
         if (!engine.CanPlay(index - 1))
         {
             OutputError($"Nie możesz zagrać karty {index}. Za mało SW lub nieprawidłowy indeks.");
@@ -115,12 +109,6 @@ public static class JsonRunner
         }
 
         var engine = new GameEngine(state);
-
-        // Przetwórz początek tury jeśli trzeba
-        if (state.Phase == GamePhase.AwaitingAction)
-        {
-            engine.ProcessStartOfTurn();
-        }
 
         if (!engine.CanEat(index - 1))
         {

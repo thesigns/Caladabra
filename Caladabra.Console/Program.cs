@@ -57,12 +57,6 @@ class Program
         // Główna pętla gry
         while (engine.State.Phase != GamePhase.Won && engine.State.Phase != GamePhase.Lost)
         {
-            // Przetwórz początek tury (liczniki na stole)
-            if (engine.State.Phase == GamePhase.AwaitingAction)
-            {
-                engine.ProcessStartOfTurn();
-            }
-
             ConsoleRenderer.RenderGameState(engine.State);
 
             System.Console.Write("  > ");

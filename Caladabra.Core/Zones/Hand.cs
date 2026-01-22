@@ -23,10 +23,12 @@ public sealed class Hand : IZone
     /// <summary>
     /// Dodaje kartę do ręki (na prawą stronę - najnowsza).
     /// </summary>
-    /// <returns>True jeśli karta została dodana, false jeśli ręka pełna.</returns>
-    public bool Add(Card card)
+    /// <param name="card">Karta do dodania.</param>
+    /// <param name="ignoreLimit">Ignoruj limit ręki (dla tymczasowego przepełnienia, np. Jasnowidzenie).</param>
+    /// <returns>True jeśli karta została dodana, false jeśli ręka pełna (i ignoreLimit=false).</returns>
+    public bool Add(Card card, bool ignoreLimit = false)
     {
-        if (IsFull)
+        if (!ignoreLimit && IsFull)
             return false;
 
         _cards.Add(card);

@@ -14,6 +14,7 @@ namespace Caladabra.Core.Engine;
 public sealed class GameEngine
 {
     public GameState State { get; }
+    private int _lastProcessedTurn = 0;
 
     public GameEngine(GameState state)
     {
@@ -154,6 +155,9 @@ public sealed class GameEngine
     {
         var events = new List<IGameEvent>();
 
+        // Automatycznie przetwórz początek tury (liczniki na stole)
+        EnsureTurnStartProcessed(events);
+
         if (!CanPlay(cardIndex))
         {
             return events;
@@ -215,6 +219,9 @@ public sealed class GameEngine
     public List<IGameEvent> Eat(int cardIndex)
     {
         var events = new List<IGameEvent>();
+
+        // Automatycznie przetwórz początek tury (liczniki na stole)
+        EnsureTurnStartProcessed(events);
 
         if (!CanEat(cardIndex))
         {
@@ -356,6 +363,20 @@ public sealed class GameEngine
     }
 
     /// <summary>
+    /// Automatycznie przetwarza początek tury, jeśli jeszcze nie był przetworzony.
+    /// Wywoływane na początku Play() i Eat().
+    /// </summary>
+    private void EnsureTurnStartProcessed(List<IGameEvent> events)
+    {
+        if (State.Turn > _lastProcessedTurn)
+        {
+            var turnEvents = ProcessStartOfTurn();
+            events.AddRange(turnEvents);
+            _lastProcessedTurn = State.Turn;
+        }
+    }
+
+    /// <summary>
     /// Przetwarza początek tury (liczniki na stole).
     /// </summary>
     public List<IGameEvent> ProcessStartOfTurn()
@@ -442,7 +463,8 @@ public sealed class GameEngine
 
         for (int i = 0; i < totalToDraw; i++)
         {
-            if (State.Hand.IsFull)
+            // Przy Jasnowidzeniu pozwól na tymczasowe przepełnienie ręki
+            if (State.Hand.IsFull && extraDraw == 0)
                 break;
 
             var card = State.Pantry.Draw();
@@ -455,7 +477,8 @@ public sealed class GameEngine
                 card.Calories = Math.Max(0, card.Calories - caloriesReduction);
             }
 
-            State.Hand.Add(card);
+            // Przy Jasnowidzeniu ignoruj limit ręki (tymczasowe przepełnienie)
+            State.Hand.Add(card, ignoreLimit: extraDraw > 0);
             drawnCards.Add(card);
             events.Add(new CardDrawnEvent(card));
 
