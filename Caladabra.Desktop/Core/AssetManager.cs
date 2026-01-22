@@ -62,6 +62,15 @@ public sealed class AssetManager
     public Texture GetFlavorIcon(Flavor flavor) =>
         GetTexture(Path.Combine("Cards", "Icons", $"icon_{flavor.ToString().ToLower()}.png"));
 
+    public Texture? GetCardArt(string cardId)
+    {
+        var path = Path.Combine("Cards", "Art", $"{cardId}.png");
+        var fullPath = Path.Combine(_basePath, path);
+        if (!File.Exists(fullPath))
+            return null;
+        return GetTexture(path);
+    }
+
     public void PreloadAssets()
     {
         // Preload default font

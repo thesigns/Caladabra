@@ -21,7 +21,7 @@ public sealed class CardRenderer
 
     // Proporcje elementów karty (jako ułamek wysokości)
     private const float BorderRatio = 0.014f;      // grubość ramki
-    private const float PaddingRatio = 0.036f;     // wewnętrzny margines
+    private const float PaddingRatio = 0.046f;     // wewnętrzny margines
     private const float TopBarRatio = 0.113f;      // wysokość górnego paska (SW, smak, Kal)
     private const float NameRatio = 0.158f;        // wysokość sekcji nazwy
     private const float IllustrationRatio = 0.338f; // wysokość ilustracji
@@ -91,7 +91,7 @@ public sealed class CardRenderer
         DrawCardBackground(target, position, width, height, card.Flavor, borderWidth, tint);
         DrawTopBar(target, card, position, width, height, padding);
         DrawName(target, card.Name, position, width, height);
-        DrawIllustration(target, card.Flavor, position, width, height);
+        DrawIllustration(target, card, position, width, height, mode);
 
         // Tryb Full - dodaj instrukcję i flavor text
         if (mode == CardDisplayMode.Full)
@@ -105,20 +105,45 @@ public sealed class CardRenderer
         }
     }
 
-    private void DrawIllustration(IRenderTarget target, Flavor flavor, Vector2f pos, float width, float height)
+    private void DrawIllustration(IRenderTarget target, Card card, Vector2f pos,
+                                    float width, float height, CardDisplayMode mode)
     {
-        // Ikona smaku w miejscu ilustracji (dopóki nie ma prawdziwych ilustracji)
         float topOffset = height * (TopBarRatio + NameRatio);
         float illustrationHeight = height * IllustrationRatio;
+        float illustrationY = pos.Y + topOffset;
 
-        var icon = _assets.GetFlavorIcon(flavor);
-        var iconSize = illustrationHeight * 0.85f;
-        var iconSprite = new Sprite(icon)
+        // Ilustracja karty
+        var art = _assets.GetCardArt(card.Id);
+        if (art != null)
         {
-            Position = pos + new Vector2f((width - iconSize) / 2, topOffset + (illustrationHeight - iconSize) / 2 + illustrationHeight * 0.1f),
-            Scale = new Vector2f(iconSize / icon.Size.X, iconSize / icon.Size.Y)
-        };
-        target.Draw(iconSprite);
+            // Skaluj zachowując proporcje
+            float scaleX = width / art.Size.X;
+            float scaleY = illustrationHeight / art.Size.Y;
+            float baseScale = Math.Min(scaleX, scaleY);
+
+            // Różna skala dla Full vs Small
+            float scale = mode == CardDisplayMode.Full
+                ? baseScale * 0.78f   // Full: +20%
+                : baseScale * 1.43f;  // Small: +120%
+
+            float scaledW = art.Size.X * scale;
+            float scaledH = art.Size.Y * scale;
+
+            // Small - trochę niżej
+            float offsetY = mode == CardDisplayMode.Small
+                ? illustrationHeight * 0.3f
+                : illustrationHeight * -0.1f;
+
+            var sprite = new Sprite(art)
+            {
+                Scale = new Vector2f(scale, scale),
+                Position = new Vector2f(
+                    pos.X + (width - scaledW) / 2,
+                    illustrationY + (illustrationHeight - scaledH) / 2 + offsetY
+                )
+            };
+            target.Draw(sprite);
+        }
     }
 
     private void DrawCardBackground(IRenderTarget target, Vector2f pos, float width, float height,
