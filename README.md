@@ -66,6 +66,8 @@ Work in progress. Playable in **Desktop** (SFML.Net) and **Console** modes.
 dotnet run --project Caladabra.Desktop
 ```
 - Full graphical interface with card textures
+- Smooth card animations between zones
+- Playable cards visually raised (elevation system)
 - Card preview on hover
 - LPM = play card, PPM = eat card
 - CardList browser with scrolling

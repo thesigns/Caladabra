@@ -1,7 +1,7 @@
 # Caladabra - Lista TODO
 
 > Plik dla kontynuacji pracy w kolejnych sesjach.
-> Ostatnia aktualizacja: 2026-01-21
+> Ostatnia aktualizacja: 2026-01-22
 
 ---
 
@@ -79,18 +79,29 @@
 - [x] Naprawiony crash przy zmianie rozdzielczości (deferred window recreation)
 - [x] Karty na Stole przesunięte niżej o 1/2 wysokości
 
+#### Animacje i UX (2026-01-22)
+- [x] `AnimationManager.cs` - zarządzanie animacjami
+- [x] `CardMoveAnimation.cs` - przeloty kart między strefami
+- [x] `Easing.cs` - funkcje easingu (EaseInOutCubic, EaseOutBack, etc.)
+- [x] Elevation system - grywalne karty uniesione o 20% (animowane)
+- [x] Duży żółty tekst instrukcji między stołem a ręką
+- [x] Hover bez powiększania - tylko tint
+- [x] Label "Ręka" pod kartami
+- [x] Ikonki na kartach większe i niżej
+- [x] Karty na stole = rozmiar ręki
+
 ---
 
 ## Do Zrobienia
 
 ### Faza 4: Polish (Priorytet: Wysoki)
 
-#### Animacje
-- [ ] `AnimationManager.cs` - kolejka animacji
-- [ ] `CardMoveAnimation.cs` - ruch karty między strefami
-- [ ] `NumberAnimation.cs` / `NumberPulseAnimation.cs` - zmiana Tłuszczu/SW
-- [ ] `FadeInAnimation.cs` - przejścia między scenami
-- [ ] Integracja z `EventProcessor.cs` - mapowanie IGameEvent → Animation
+#### Animacje - PODSTAWOWE ZAIMPLEMENTOWANE ✅
+- [x] `AnimationManager.cs` - zarządzanie animacjami
+- [x] `CardMoveAnimation.cs` - ruch karty między strefami
+- [x] Easing functions (EaseInOutCubic, EaseOutBack, etc.)
+- [ ] `NumberAnimation.cs` / `NumberPulseAnimation.cs` - zmiana Tłuszczu/SW (opcjonalnie)
+- [ ] `FadeInAnimation.cs` - przejścia między scenami (opcjonalnie)
 
 #### Menu Główne
 - [x] `MainMenuScene.cs`:
@@ -198,6 +209,9 @@
 - `Caladabra.Desktop/Scenes/EnterSeedScene.cs` - wprowadzanie seeda (overlay)
 - `Caladabra.Desktop/Scenes/GameScene.cs` - główna scena gry (~900 linii)
 - `Caladabra.Desktop/Scenes/CardListScene.cs` - overlay z listą kart
+- `Caladabra.Desktop/Animation/AnimationManager.cs` - system animacji
+- `Caladabra.Desktop/Animation/CardMoveAnimation.cs` - animacja kart
+- `Caladabra.Desktop/Animation/Easing.cs` - funkcje easingu
 - `Caladabra.Desktop/UI/Button.cs` - komponent przycisku
 - `Caladabra.Desktop/UI/TextInput.cs` - komponent tekstu (DigitsOnly)
 - `Caladabra.Desktop/Rendering/CardRenderer.cs` - renderowanie kart
@@ -224,6 +238,16 @@ dotnet run --project Caladabra.Console -- new --deck test_deck.json
 ---
 
 ## Changelog (Ostatnia Sesja)
+
+### 2026-01-22 (sesja 5)
+- System animacji kart (`AnimationManager`, `CardMoveAnimation`, `Easing`)
+- Elevation system - grywalne karty (SW ≤ obecna SW) uniesione o 20% z animacją
+- Duży żółty tekst instrukcji między stołem a ręką (dynamiczny zależnie od SW)
+- Zamiana interpunkcji w promptach (dwukropki → kropki)
+- Ikonki na kartach większe (0.85f) i przesunięte niżej
+- Karty na stole tej samej wielkości co w ręce (TableScale = 1.0f)
+- Hover bez powiększania/unoszenia - tylko żółty tint
+- Label "Ręka" przeniesiony pod karty
 
 ### 2026-01-21 (sesja 4)
 - Limit 30 tur - `GameRules.MaxTurns = 30`, komunikaty przegranej, "Tura: X/30" w UI

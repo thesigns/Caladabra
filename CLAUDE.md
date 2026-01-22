@@ -31,6 +31,9 @@ Caladabra/
 | `Desktop/Scenes/CardListScene.cs` | Overlay z listą kart (browser/picker) |
 | `Desktop/Rendering/CardRenderer.cs` | Renderowanie kart (tekstury, tryby) |
 | `Desktop/Integration/GameController.cs` | Wrapper na GameEngine dla UI |
+| `Desktop/Animation/AnimationManager.cs` | System animacji (kolejka, blokada interakcji) |
+| `Desktop/Animation/CardMoveAnimation.cs` | Animacja przelotu karty |
+| `Desktop/Animation/Easing.cs` | Funkcje easingu |
 
 ## Architektura Efektów Kart
 
@@ -208,6 +211,7 @@ Wszystkie 18 kart z prototypowej talii ma działające efekty.
 - [x] ~~Custom deck z pliku JSON (--deck)~~ - ZAIMPLEMENTOWANE
 - [x] ~~Wszystkie efekty kart~~ - ZAIMPLEMENTOWANE
 - [x] ~~Faza 2: SFML.Net Desktop~~ - ZAIMPLEMENTOWANE
+- [x] ~~Animacje kart~~ - ZAIMPLEMENTOWANE (CardMoveAnimation, elevation system)
 - [ ] Unit testy (odłożone)
 - [ ] Balans kart
 
