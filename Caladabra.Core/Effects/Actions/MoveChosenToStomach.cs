@@ -33,6 +33,18 @@ public sealed class MoveChosenToStomach : IEffect
         {
             context.State.Toilet.Add(expelled);
             context.Emit(new CardDiscardedEvent(expelled, ZoneType.Stomach));
+
+            // Wykonaj OnDiscard dla wypchniętej karty
+            if (expelled.OnDiscard != null)
+            {
+                var expelledContext = new EffectContext
+                {
+                    State = context.State,
+                    SourceCard = expelled,
+                    Events = context.Events
+                };
+                expelled.OnDiscard.Execute(expelledContext);
+            }
         }
 
         return EffectResult.Done();

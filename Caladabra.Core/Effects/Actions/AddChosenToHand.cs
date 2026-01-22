@@ -51,6 +51,11 @@ public sealed class AddChosenToHand : IEffect
                     {
                         card = entries[index].Card;
                         context.State.Table.Remove(card);
+                        // Wykonaj OnLeaveTable
+                        if (card.OnLeaveTable != null)
+                        {
+                            card.OnLeaveTable.Execute(context);
+                        }
                     }
                     else
                     {

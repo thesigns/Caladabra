@@ -20,6 +20,18 @@ public sealed class EmptyStomachToToilet : IEffect
         {
             context.State.Toilet.Add(card);
             context.Emit(new CardMovedEvent(card, ZoneType.Stomach, ZoneType.Toilet));
+
+            // Wykonaj OnDiscard
+            if (card.OnDiscard != null)
+            {
+                var cardContext = new EffectContext
+                {
+                    State = context.State,
+                    SourceCard = card,
+                    Events = context.Events
+                };
+                card.OnDiscard.Execute(cardContext);
+            }
         }
 
         return EffectResult.Done();

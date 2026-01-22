@@ -250,6 +250,13 @@ public sealed class GameEngine
         {
             State.Toilet.Add(expelled);
             events.Add(new CardDiscardedEvent(expelled, ZoneType.Stomach));
+
+            // Wykonaj OnDiscard dla wypchniętej karty
+            if (expelled.OnDiscard != null)
+            {
+                var expelledContext = CreateEffectContext(expelled, events);
+                expelled.OnDiscard.Execute(expelledContext);
+            }
         }
 
         // Wykonaj efekt OnEat
