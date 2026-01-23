@@ -1602,4 +1602,6 @@ public sealed class GameScene : IScene
     }
 
     #endregion
+
+    public void OnResolutionChanged() => UpdateLayout();
 }

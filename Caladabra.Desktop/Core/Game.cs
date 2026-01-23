@@ -204,5 +204,8 @@ public sealed class Game
 
         InitializeWindow();
         _scale.UpdateScale(_pendingWidth, _pendingHeight);
+
+        // Notify current scene about resolution change
+        _sceneManager.CurrentScene?.OnResolutionChanged();
     }
 }

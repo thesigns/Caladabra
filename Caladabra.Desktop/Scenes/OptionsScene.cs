@@ -364,14 +364,15 @@ public sealed class OptionsScene : IScene
         var resolution = Resolutions[_selectedResolutionIndex];
         _game.ApplyResolution(resolution.Width, resolution.Height, _selectedFullscreen);
 
-        // Scene needs to be re-entered after resolution change
         _hasChanges = false;
         _applyButton.IsEnabled = false;
-        UpdateLayout();
+        // Layout will be updated by OnResolutionChanged() after actual resolution change
     }
 
     private void OnBack()
     {
         _game.SceneManager.PopScene();
     }
+
+    public void OnResolutionChanged() => UpdateLayout();
 }

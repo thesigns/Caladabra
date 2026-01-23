@@ -10,4 +10,5 @@ public interface IScene
     void HandleEvent(Event sfmlEvent);
     void Update(float deltaTime);
     void Render(RenderWindow window);
+    void OnResolutionChanged();
 }

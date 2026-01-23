@@ -260,4 +260,6 @@ public sealed class EnterSeedScene : IScene
         _game.SceneManager.PopScene();
         _game.SceneManager.ReplaceScene(new GameScene(_game, gameController));
     }
+
+    public void OnResolutionChanged() => UpdateLayout();
 }

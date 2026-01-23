@@ -237,4 +237,6 @@ public sealed class MainMenuScene : IScene
     {
         _game.Window.Close();
     }
+
+    public void OnResolutionChanged() => UpdateLayout();
 }

@@ -431,4 +431,6 @@ public sealed class CardListScene : IScene
         );
         window.Draw(hintText);
     }
+
+    public void OnResolutionChanged() => CalculateLayout();
 }
