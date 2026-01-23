@@ -6,7 +6,7 @@ namespace Caladabra.Core.State;
 public enum ModifierType
 {
     /// <summary>
-    /// Jasnowidzenie: dobierz +1 kartę, potem wybierz 1 do odrzucenia.
+    /// Jasnowidzenie: dobierz +1 kartę, potem wybierz 1 do zachowania (reszta odrzucona).
     /// </summary>
     ExtraDrawThenDiscard,
 
