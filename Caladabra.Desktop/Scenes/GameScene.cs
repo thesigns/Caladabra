@@ -46,6 +46,18 @@ public sealed class GameScene : IScene
     private float _errorMessageTimer = 0f;
     private const float ErrorMessageDuration = 2.0f;  // 2 sekundy
 
+    // Mouse interaction state (LPM-only: double-click to play, hold to eat)
+    private bool _isMousePressed = false;
+    private float _mouseHoldTime = 0f;
+    private int _mouseHoldHandIndex = -1;
+    private float _totalTime = 0f;  // Total elapsed time for double-click detection
+    private float _lastClickTime = 0f;
+    private int _lastClickHandIndex = -1;
+    private const float DoubleClickThreshold = 0.3f;  // 300ms
+
+    // Eating progress bar
+    private ProgressBar _eatProgressBar = null!;
+
     // CardList scene state
     private bool _cardListSceneOpen = false;
 
@@ -110,9 +122,16 @@ public sealed class GameScene : IScene
             FillColor = Theme.TextPrimary
         };
 
-        _infoText = new Text(font, "ESC = wyjście | LPM = zagraj | PPM = zjedz", _game.Scale.S(Theme.FontSizeSmall))
+        _infoText = new Text(font, "ESC = wyjście | 2xLPM = zagraj | przytrzymaj = zjedz", _game.Scale.S(Theme.FontSizeSmall))
         {
             FillColor = Theme.TextSecondary
+        };
+
+        // Eating progress bar
+        _eatProgressBar = new ProgressBar(font, _game.Scale)
+        {
+            Label = "Zjadam",
+            IsVisible = false
         };
 
         UpdateLayout();
@@ -141,16 +160,16 @@ public sealed class GameScene : IScene
             UpdateHoveredCard();
         }
 
-        // LPM = zagraj kartę
+        // LPM pressed - start tracking for double-click or hold
         if (sfmlEvent.Type == EventType.MouseButtonPressed && sfmlEvent.MouseButton.Button == Mouse.Button.Left)
         {
-            HandleLeftClick();
+            HandleLeftMouseDown();
         }
 
-        // PPM = zjedz kartę
-        if (sfmlEvent.Type == EventType.MouseButtonPressed && sfmlEvent.MouseButton.Button == Mouse.Button.Right)
+        // LPM released - detect single click (show hint) or cancel hold
+        if (sfmlEvent.Type == EventType.MouseButtonReleased && sfmlEvent.MouseButton.Button == Mouse.Button.Left)
         {
-            HandleRightClick();
+            HandleLeftMouseUp();
         }
 
         // Scroll = przewijanie inline selection
@@ -165,99 +184,7 @@ public sealed class GameScene : IScene
         }
     }
 
-    private void HandleLeftClick()
-    {
-        // Blokada interakcji podczas animacji
-        if (_animationManager.IsAnimating) return;
-
-        // Gra skończona - nie reaguj na kliknięcia
-        if (_controller.IsGameOver)
-        {
-            return;
-        }
-
-        // Obsługa inline selection
-        if (_inlineSelectionActive && State.PendingChoice != null)
-        {
-            var choice = State.PendingChoice;
-            int requiredCount = choice.MaxChoices;
-
-            // Klik na strzałkę lewą
-            if (_selectionScrollOffset > 0 && IsMouseOver(GetLeftArrowRect()))
-            {
-                _selectionScrollOffset--;
-                return;
-            }
-
-            // Klik na strzałkę prawą
-            if (_selectionScrollOffset + MaxVisibleSelectionCards < _selectionOptions.Count &&
-                IsMouseOver(GetRightArrowRect()))
-            {
-                _selectionScrollOffset++;
-                return;
-            }
-
-            // Klik na przycisk Zatwierdź (multi-select)
-            if (requiredCount > 1 && _selectedIndices.Count == requiredCount &&
-                IsMouseOver(GetConfirmButtonRect()))
-            {
-                // Przekaż wszystkie zaznaczone indeksy
-                var indices = _selectedIndices.Select(i => _selectionOptions[i].Index).ToArray();
-                CloseInlineSelection();
-                _controller.MakeChoice(indices[0]); // Na razie single - TODO: multi
-                return;
-            }
-
-            // Klik na kartę
-            if (_hoveredSelectionIndex >= 0)
-            {
-                if (requiredCount == 1)
-                {
-                    // Single select - od razu wybierz
-                    var choiceIndex = _selectionOptions[_hoveredSelectionIndex].Index;
-                    CloseInlineSelection();
-                    _controller.MakeChoice(choiceIndex);
-                }
-                else
-                {
-                    // Multi select - toggle zaznaczenia
-                    if (_selectedIndices.Contains(_hoveredSelectionIndex))
-                        _selectedIndices.Remove(_hoveredSelectionIndex);
-                    else if (_selectedIndices.Count < requiredCount)
-                        _selectedIndices.Add(_hoveredSelectionIndex);
-                }
-                return;
-            }
-            return; // Nie pozwalaj na inne akcje gdy inline selection aktywna
-        }
-
-        // If awaiting choice, handle choice selection
-        if (_controller.IsAwaitingChoice && _hoveredChoiceIndex >= 0)
-        {
-            _controller.MakeChoice(_hoveredChoiceIndex);
-            _hoveredChoiceIndex = -1;
-            return;
-        }
-
-        // Zagraj kartę z ręki (single-click LPM)
-        if (_hoveredHandIndex >= 0)
-        {
-            // Sprawdź czy mamy dość SW
-            if (!_controller.CanPlayCard(_hoveredHandIndex))
-            {
-                ShowErrorMessage("Masz za mało Siły Woli żeby zagrać tę kartę");
-                return;
-            }
-
-            if (_controller.PlayCard(_hoveredHandIndex))
-            {
-                _hoveredCard = null;
-                _hoveredHandIndex = -1;
-            }
-        }
-    }
-
-    private void HandleRightClick()
+    private void HandleLeftMouseDown()
     {
         // Blokada interakcji podczas animacji
         if (_animationManager.IsAnimating) return;
@@ -265,15 +192,147 @@ public sealed class GameScene : IScene
         // Gra skończona - nie reaguj na kliknięcia
         if (_controller.IsGameOver) return;
 
-        // Zjedz kartę z ręki (single-click PPM)
+        // Obsługa inline selection (immediate click, no double-click/hold)
+        if (_inlineSelectionActive && State.PendingChoice != null)
+        {
+            HandleInlineSelectionClick();
+            return;
+        }
+
+        // If awaiting choice, handle choice selection (immediate)
+        if (_controller.IsAwaitingChoice && _hoveredChoiceIndex >= 0)
+        {
+            _controller.MakeChoice(_hoveredChoiceIndex);
+            _hoveredChoiceIndex = -1;
+            return;
+        }
+
+        // Start tracking mouse hold for cards in hand
         if (_hoveredHandIndex >= 0 && !_controller.IsAwaitingChoice)
         {
-            if (_controller.EatCard(_hoveredHandIndex))
+            // Check for double-click (play card)
+            if (_hoveredHandIndex == _lastClickHandIndex &&
+                (_totalTime - _lastClickTime) < DoubleClickThreshold)
             {
-                _hoveredCard = null;
-                _hoveredHandIndex = -1;
+                // Double-click detected - try to play
+                TryPlayCard(_hoveredHandIndex);
+                _lastClickHandIndex = -1;  // Reset to prevent triple-click
+                return;
+            }
+
+            // Start hold tracking for eating
+            _isMousePressed = true;
+            _mouseHoldTime = 0f;
+            _mouseHoldHandIndex = _hoveredHandIndex;
+        }
+    }
+
+    private void HandleLeftMouseUp()
+    {
+        if (!_isMousePressed)
+        {
+            return;
+        }
+
+        var eatDelay = _game.Settings.EatDelay;
+
+        // If released before eat delay and on a hand card - it was a single click
+        if (_mouseHoldTime < eatDelay && _mouseHoldHandIndex >= 0)
+        {
+            // Record click time for double-click detection
+            _lastClickTime = _totalTime;
+            _lastClickHandIndex = _mouseHoldHandIndex;
+
+            // Show hint message
+            ShowErrorMessage("Kliknij podwójnie by zagrać, przytrzymaj by zjeść");
+        }
+
+        ResetMouseHold();
+    }
+
+    private void HandleInlineSelectionClick()
+    {
+        var choice = State.PendingChoice!;
+        int requiredCount = choice.MaxChoices;
+
+        // Klik na strzałkę lewą
+        if (_selectionScrollOffset > 0 && IsMouseOver(GetLeftArrowRect()))
+        {
+            _selectionScrollOffset--;
+            return;
+        }
+
+        // Klik na strzałkę prawą
+        if (_selectionScrollOffset + MaxVisibleSelectionCards < _selectionOptions.Count &&
+            IsMouseOver(GetRightArrowRect()))
+        {
+            _selectionScrollOffset++;
+            return;
+        }
+
+        // Klik na przycisk Zatwierdź (multi-select)
+        if (requiredCount > 1 && _selectedIndices.Count == requiredCount &&
+            IsMouseOver(GetConfirmButtonRect()))
+        {
+            var indices = _selectedIndices.Select(i => _selectionOptions[i].Index).ToArray();
+            CloseInlineSelection();
+            _controller.MakeChoice(indices[0]); // Na razie single - TODO: multi
+            return;
+        }
+
+        // Klik na kartę
+        if (_hoveredSelectionIndex >= 0)
+        {
+            if (requiredCount == 1)
+            {
+                var choiceIndex = _selectionOptions[_hoveredSelectionIndex].Index;
+                CloseInlineSelection();
+                _controller.MakeChoice(choiceIndex);
+            }
+            else
+            {
+                if (_selectedIndices.Contains(_hoveredSelectionIndex))
+                    _selectedIndices.Remove(_hoveredSelectionIndex);
+                else if (_selectedIndices.Count < requiredCount)
+                    _selectedIndices.Add(_hoveredSelectionIndex);
             }
         }
+    }
+
+    private void TryPlayCard(int handIndex)
+    {
+        ResetMouseHold();
+
+        if (!_controller.CanPlayCard(handIndex))
+        {
+            ShowErrorMessage("Masz za mało Siły Woli żeby zagrać tę kartę");
+            return;
+        }
+
+        if (_controller.PlayCard(handIndex))
+        {
+            _hoveredCard = null;
+            _hoveredHandIndex = -1;
+        }
+    }
+
+    private void TryEatCard(int handIndex)
+    {
+        ResetMouseHold();
+
+        if (_controller.EatCard(handIndex))
+        {
+            _hoveredCard = null;
+            _hoveredHandIndex = -1;
+        }
+    }
+
+    private void ResetMouseHold()
+    {
+        _isMousePressed = false;
+        _mouseHoldTime = 0f;
+        _mouseHoldHandIndex = -1;
+        _eatProgressBar.IsVisible = false;
     }
 
     private void ShowErrorMessage(string message)
@@ -284,6 +343,9 @@ public sealed class GameScene : IScene
 
     public void Update(float deltaTime)
     {
+        // Track total time for double-click detection
+        _totalTime += deltaTime;
+
         // Process game events and trigger animations
         ProcessGameEvents();
 
@@ -298,6 +360,9 @@ public sealed class GameScene : IScene
         {
             _errorMessageTimer -= deltaTime;
         }
+
+        // Update mouse hold for eating
+        UpdateMouseHold(deltaTime);
 
         // Auto-show inline selection for CardList/Toilet/Pantry/DiscardFromHand choices
         if (_controller.IsAwaitingChoice && State.PendingChoice != null && !_inlineSelectionActive)
@@ -338,15 +403,71 @@ public sealed class GameScene : IScene
 
             if (canPlayAny)
             {
-                _infoText.DisplayedString = "Zagraj (LPM) lub zjedz (PPM) kartę z ręki.";
+                _infoText.DisplayedString = "Kliknij 2x by zagrać lub przytrzymaj by zjeść kartę.";
                 _infoText.FillColor = new Color(255, 200, 100);  // Żółty jak reszta
             }
             else
             {
-                _infoText.DisplayedString = "Nie masz dość siły woli! Zjedz (PPM) kartę z ręki.";
+                _infoText.DisplayedString = "Nie masz dość siły woli! Przytrzymaj kartę by zjeść.";
                 _infoText.FillColor = new Color(255, 150, 100);
             }
         }
+    }
+
+    private void UpdateMouseHold(float deltaTime)
+    {
+        if (!_isMousePressed || _mouseHoldHandIndex < 0)
+        {
+            _eatProgressBar.IsVisible = false;
+            return;
+        }
+
+        // Check if mouse moved away from the card
+        if (_hoveredHandIndex != _mouseHoldHandIndex)
+        {
+            ResetMouseHold();
+            return;
+        }
+
+        var eatDelay = _game.Settings.EatDelay;
+        _mouseHoldTime += deltaTime;
+
+        // Update progress bar
+        _eatProgressBar.Progress = _mouseHoldTime / eatDelay;
+        _eatProgressBar.IsVisible = true;
+
+        // Position progress bar at center of held card
+        PositionEatProgressBar();
+
+        // Check if hold time exceeded - eat the card
+        if (_mouseHoldTime >= eatDelay)
+        {
+            TryEatCard(_mouseHoldHandIndex);
+        }
+    }
+
+    private void PositionEatProgressBar()
+    {
+        // Calculate card position in hand
+        var handCards = State.Hand.Cards.ToList();
+        if (_mouseHoldHandIndex < 0 || _mouseHoldHandIndex >= handCards.Count)
+            return;
+
+        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
+        float spacing = cardSize.X * CardSpacingRatio;
+        float totalWidth = handCards.Count * cardSize.X + (handCards.Count - 1) * spacing;
+        float startX = (_game.Scale.CurrentWidth - totalWidth) / 2;
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
+
+        float cardX = startX + _mouseHoldHandIndex * (cardSize.X + spacing);
+        float cardCenterX = cardX + cardSize.X / 2;
+        float cardCenterY = y + cardSize.Y / 2;
+
+        // Position progress bar centered on card
+        _eatProgressBar.Position = new Vector2f(
+            cardCenterX - _eatProgressBar.Size.X / 2,
+            cardCenterY - _eatProgressBar.Size.Y / 2
+        );
     }
 
     private void UpdateCardElevations(float deltaTime)
@@ -647,6 +768,9 @@ public sealed class GameScene : IScene
             DrawTableZone(window);
 
         DrawHandZone(window);
+
+        // Eating progress bar (on top of card)
+        _eatProgressBar.Draw(window);
 
         // Info text at bottom
         DrawInfoBar(window);

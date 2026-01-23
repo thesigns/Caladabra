@@ -9,6 +9,7 @@ public sealed class GameSettings
     public bool Fullscreen { get; set; } = false;
     public string Locale { get; set; } = "pl";
     public float MasterVolume { get; set; } = 1.0f;
+    public float EatDelay { get; set; } = 0.5f;
 
     private const string SettingsFile = "settings.json";
 
