@@ -54,6 +54,8 @@ public sealed class GameScene : IScene
     private float _lastClickTime = 0f;
     private int _lastClickHandIndex = -1;
     private const float DoubleClickThreshold = 0.3f;  // 300ms
+    private const float EatProgressBarDelay = 0.3f;    // Wait before showing bar
+    private const float EatProgressBarDuration = 0.7f; // Time to fill the bar
 
     // Eating progress bar
     private ProgressBar _eatProgressBar = null!;
@@ -107,22 +109,22 @@ public sealed class GameScene : IScene
         _animationManager = new AnimationManager();
 
         // Status bar labels (2x większa czcionka)
-        _fatLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
+        _fatLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeStats))
         {
             FillColor = Theme.TextPrimary
         };
 
-        _willpowerLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
+        _willpowerLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeStats))
         {
             FillColor = Theme.TextPrimary
         };
 
-        _turnLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeNormal * 2))
+        _turnLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeStats))
         {
             FillColor = Theme.TextPrimary
         };
 
-        _infoText = new Text(font, "ESC = wyjście | 2xLPM = zagraj | przytrzymaj = zjedz", _game.Scale.S(Theme.FontSizeSmall))
+        _infoText = new Text(font, "ESC = wyjście | 2xLPM = zagraj | przytrzymaj = zjedz", _game.Scale.S(Theme.FontSizeInfoText))
         {
             FillColor = Theme.TextSecondary
         };
@@ -234,17 +236,14 @@ public sealed class GameScene : IScene
             return;
         }
 
-        var eatDelay = _game.Settings.EatDelay;
+        var totalEatTime = EatProgressBarDelay + EatProgressBarDuration;
 
-        // If released before eat delay and on a hand card - it was a single click
-        if (_mouseHoldTime < eatDelay && _mouseHoldHandIndex >= 0)
+        // If released before eat completes and on a hand card - it was a single click
+        if (_mouseHoldTime < totalEatTime && _mouseHoldHandIndex >= 0)
         {
             // Record click time for double-click detection
             _lastClickTime = _totalTime;
             _lastClickHandIndex = _mouseHoldHandIndex;
-
-            // Show hint message
-            ShowErrorMessage("Kliknij podwójnie by zagrać, przytrzymaj by zjeść");
         }
 
         ResetMouseHold();
@@ -403,7 +402,7 @@ public sealed class GameScene : IScene
 
             if (canPlayAny)
             {
-                _infoText.DisplayedString = "Kliknij 2x by zagrać lub przytrzymaj by zjeść kartę.";
+                _infoText.DisplayedString = "Kliknij podwójnie kartę LPM by ją zagrać, przytrzymaj LPM by ją zjeść.";
                 _infoText.FillColor = new Color(255, 200, 100);  // Żółty jak reszta
             }
             else
@@ -429,18 +428,25 @@ public sealed class GameScene : IScene
             return;
         }
 
-        var eatDelay = _game.Settings.EatDelay;
         _mouseHoldTime += deltaTime;
 
-        // Update progress bar
-        _eatProgressBar.Progress = _mouseHoldTime / eatDelay;
+        // Phase 1: Delay before showing progress bar (0.3s)
+        if (_mouseHoldTime < EatProgressBarDelay)
+        {
+            _eatProgressBar.IsVisible = false;
+            return;
+        }
+
+        // Phase 2: Show and fill progress bar (0.7s)
+        var progressTime = _mouseHoldTime - EatProgressBarDelay;
+        _eatProgressBar.Progress = progressTime / EatProgressBarDuration;
         _eatProgressBar.IsVisible = true;
 
         // Position progress bar at center of held card
         PositionEatProgressBar();
 
         // Check if hold time exceeded - eat the card
-        if (_mouseHoldTime >= eatDelay)
+        if (progressTime >= EatProgressBarDuration)
         {
             TryEatCard(_mouseHoldHandIndex);
         }
@@ -453,11 +459,18 @@ public sealed class GameScene : IScene
         if (_mouseHoldHandIndex < 0 || _mouseHoldHandIndex >= handCards.Count)
             return;
 
+        var card = handCards[_mouseHoldHandIndex];
         var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
         float spacing = cardSize.X * CardSpacingRatio;
         float totalWidth = handCards.Count * cardSize.X + (handCards.Count - 1) * spacing;
         float startX = (_game.Scale.CurrentWidth - totalWidth) / 2;
         float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
+
+        // Apply elevation offset (same as in DrawHandZone)
+        if (_cardElevation.TryGetValue(card.Id, out var elevation) && elevation > 0)
+        {
+            y -= cardSize.Y * ElevationRatio * elevation;
+        }
 
         float cardX = startX + _mouseHoldHandIndex * (cardSize.X + spacing);
         float cardCenterX = cardX + cardSize.X / 2;
@@ -547,7 +560,7 @@ public sealed class GameScene : IScene
 
         float centerX = _game.Scale.CurrentWidth / 2;
         float startX = centerX - totalWidth / 2;
-        float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
 
         for (int i = 0; i < cards.Count; i++)
         {
@@ -692,7 +705,7 @@ public sealed class GameScene : IScene
 
                     float centerX = _game.Scale.CurrentWidth / 2;
                     float startX = centerX - totalWidth / 2;
-                    float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
+                    float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
 
                     for (int i = 0; i < choice.Options.Count; i++)
                     {
@@ -978,7 +991,7 @@ public sealed class GameScene : IScene
 
         if (cards.Count > 6)
         {
-            var moreLabel = new Text(_game.Assets.DefaultFont, $"+{cards.Count - 6} więcej", _game.Scale.S(12u))
+            var moreLabel = new Text(_game.Assets.DefaultFont, $"+{cards.Count - 6} więcej", _game.Scale.S(Theme.FontSizeSmall))
             {
                 FillColor = Theme.TextSecondary,
                 Position = new Vector2f(x, cardY + maxVisible * (cardSize.Y + spacing))
@@ -1045,7 +1058,7 @@ public sealed class GameScene : IScene
     private void DrawHandZone(RenderWindow window)
     {
         float centerX = _game.Scale.CurrentWidth / 2;
-        float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
 
         var cards = State.Hand.Cards.ToList();
         var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
@@ -1101,8 +1114,6 @@ public sealed class GameScene : IScene
 
     private void DrawInfoBar(RenderWindow window)
     {
-        // Zawsze duża czcionka i pozycja między stołem a ręką
-        _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeTitle);
         var bounds = _infoText.GetLocalBounds();
         float y = _game.Scale.CurrentHeight * 0.55f;
 
@@ -1161,10 +1172,10 @@ public sealed class GameScene : IScene
     private void UpdateLayout()
     {
         // Update font sizes (stats 2x większe)
-        _fatLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
-        _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
-        _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeNormal * 2);
-        _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeSmall);
+        _fatLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
+        _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
+        _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
+        _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeInfoText);
     }
 
     private void OpenCardListScene(CardListMode mode, Flavor? flavorFilter = null)
@@ -1341,7 +1352,7 @@ public sealed class GameScene : IScene
 
         // Tekst strzałki
         string arrow = isLeft ? "<" : ">";
-        var text = new Text(_game.Assets.DefaultFont, arrow, (uint)_game.Scale.S(24))
+        var text = new Text(_game.Assets.DefaultFont, arrow, _game.Scale.S(Theme.FontSizeLarge))
         {
             FillColor = Color.White
         };
@@ -1651,7 +1662,7 @@ public sealed class GameScene : IScene
 
         float centerX = _game.Scale.CurrentWidth / 2;
         float startX = centerX - totalWidth / 2;
-        float y = _game.Scale.CurrentHeight - _game.Scale.S(280f);
+        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
 
         return new Vector2f(startX + index * (cardSize.X + spacing), y);
     }

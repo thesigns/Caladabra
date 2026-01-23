@@ -32,6 +32,8 @@ public static class Theme
     public const uint FontSizeMedium = 18;
     public const uint FontSizeLarge = 24;
     public const uint FontSizeTitle = 32;
+    public const uint FontSizeInfoText = 21;
+    public const uint FontSizeStats = 30;
 
     // Card-specific font sizes
     public const uint CardFontSizeStat = 14;
