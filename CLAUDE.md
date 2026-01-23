@@ -1,64 +1,76 @@
-# Caladabra - Notatki Techniczne
+# CLAUDE.md
 
-> Zasady gry i mechaniki opisane są w `Docs/CaladabraGDD.md` - nie duplikuj tutaj.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Struktura Projektu
+## Build & Run Commands
+
+```bash
+# Build entire solution
+dotnet build
+
+# Run Desktop (graphical - SFML.Net)
+dotnet run --project Caladabra.Desktop
+
+# Run Console interactive mode
+dotnet run --project Caladabra.Console -- interactive
+
+# Run Console JSON mode (AI-friendly, turn-by-turn)
+dotnet run --project Caladabra.Console -- new [--seed N] [--deck file.json]
+dotnet run --project Caladabra.Console -- play N
+dotnet run --project Caladabra.Console -- eat N
+dotnet run --project Caladabra.Console -- choose N
+dotnet run --project Caladabra.Console -- status
+
+# Test with custom deck (cards in exact order, no shuffle)
+dotnet run --project Caladabra.Console -- new --deck test_deck.json
+```
+
+## Project Structure
 
 ```
 Caladabra/
-├── Caladabra.Core/          # Logika gry (biblioteka)
-├── Caladabra.Console/       # Aplikacja konsolowa
-├── Caladabra.Desktop/       # Aplikacja graficzna SFML.Net
-└── Docs/CaladabraGDD.md     # Game Design Document
+├── Caladabra.Core/          # Game logic library (.NET 9)
+├── Caladabra.Console/       # Console app (interactive + JSON API)
+├── Caladabra.Desktop/       # SFML.Net 3.0.0 graphical client
+└── Docs/CaladabraGDD.md     # Game Design Document (rules, cards)
 ```
 
-## Zasada Architektury: Core First
+## Architecture: Core First
 
-**WAŻNE: Jeśli coś można naprawić w Core, napraw to w Core - nie w Desktop/Console.**
+**If something can be fixed in Core, fix it in Core - not in Desktop/Console.**
 
-- `Core` zawiera całą logikę gry i powinien działać niezależnie od UI
-- `Desktop` i `Console` to tylko "cienkie" warstwy prezentacji
-- Jeśli bug dotyczy mechaniki gry → napraw w `Core`
-- Jeśli trzeba dodać "workaround" w UI → zastanów się czy to nie powinno być w `Core`
+- `Core` contains all game logic and should work independently of UI
+- `Desktop` and `Console` are thin presentation layers
+- Bug in game mechanics → fix in `Core`
+- Need a UI workaround → reconsider if it belongs in `Core`
 
-Przykład: Liczniki kart na stole (`ProcessStartOfTurn`) - powinny być automatycznie obsługiwane przez `GameEngine`, nie przez każdą warstwę UI osobno.
+## Key Files
 
-## Kluczowe Pliki
+| File | Purpose |
+|------|---------|
+| `Core/Engine/GameEngine.cs` | Main engine: `Play()`, `Eat()`, `Choose()`, `DrawCards()` |
+| `Core/Engine/GameRules.cs` | Constants: StartingFat=100, MaxWillpower=30, MaxTurns=30 |
+| `Core/State/GameState.cs` | Full game state (Fat, Willpower, zones, ActiveModifiers) |
+| `Core/State/PendingChoice.cs` | Player choice system |
+| `Core/Cards/Definitions/CardDefinitions.cs` | All 18 card definitions |
+| `Core/Cards/CardRegistry.cs` | Singleton card registry |
+| `Desktop/Scenes/GameScene.cs` | Main gameplay scene |
+| `Desktop/Integration/GameController.cs` | GameEngine wrapper for UI |
+| `Desktop/Animation/AnimationManager.cs` | Animation queue, interaction blocking |
 
-| Plik | Opis |
-|------|------|
-| `Core/Engine/GameEngine.cs` | Silnik gry - `Play()`, `Eat()`, `Choose()`, `DrawCards()` |
-| `Core/Engine/GameRules.cs` | Stałe (StartingFat=100, MaxWillpower=30, MaxTurns=30) |
-| `Core/Engine/DeckBuilder.cs` | Budowanie talii (prototype, test, z pliku JSON) |
-| `Core/State/GameState.cs` | Pełny stan gry (Fat, Willpower, strefy, ActiveModifiers) |
-| `Core/State/PendingChoice.cs` | System decyzji gracza |
-| `Core/State/ModifierType.cs` | Typy modyfikatorów ciągłych |
-| `Core/State/ActiveModifier.cs` | Aktywny modyfikator (karta na stole) |
-| `Core/Cards/Definitions/CardDefinitions.cs` | Definicje wszystkich 18 kart |
-| `Core/Cards/CardRegistry.cs` | Singleton z rejestrem kart |
-| `Console/Program.cs` | Punkt wejścia, tryby: interactive, test, JSON |
-| `Console/JsonRunner.cs` | Runner JSON dla trybu turn-by-turn (AI-friendly) |
-| `Desktop/Scenes/GameScene.cs` | Główna scena rozgrywki |
-| `Desktop/Scenes/CardListScene.cs` | Overlay z listą kart (browser/picker) |
-| `Desktop/Rendering/CardRenderer.cs` | Renderowanie kart (tekstury, tryby) |
-| `Desktop/Integration/GameController.cs` | Wrapper na GameEngine dla UI |
-| `Desktop/Animation/AnimationManager.cs` | System animacji (kolejka, blokada interakcji) |
-| `Desktop/Animation/CardMoveAnimation.cs` | Animacja przelotu karty |
-| `Desktop/Animation/Easing.cs` | Funkcje easingu |
+## Card Effect System
 
-## Architektura Efektów Kart
-
-Hybrydowy system kompozycji:
+Hybrid composition pattern in `Core/Effects/`:
 
 ```csharp
-// Przykład karty z sekwencją efektów
+// Sequence of effects
 OnPlay = new Sequence(
     new ReduceFat(6),
     new ChooseCardFromZone(ZoneType.Table, "Prompt:",
         continuation: new DiscardChosenCard(ZoneType.Table))
 )
 
-// Przykład warunkowego efektu (OnTurnOnTable)
+// Conditional effect
 OnTurnOnTable = new Conditional(
     new HasFlavorsInZone(ZoneType.Stomach, Flavor.Sweet, Flavor.Sour),
     thenEffect: new GainWillpower(8),
@@ -66,93 +78,59 @@ OnTurnOnTable = new Conditional(
 )
 ```
 
-### Dostępne Klocki Efektów (`Core/Effects/Actions/`)
+### Effect Building Blocks (`Core/Effects/Actions/`)
 
-| Klocek | Opis |
-|--------|------|
-| `ReduceFat(n)` | -n Tłuszczu |
-| `GainFat(n)` | +n Tłuszczu |
-| `GainWillpower(n)` | +n SW |
-| `LoseWillpower(n)` | -n SW |
-| `PlaceOnTable(turns)` | Połóż kartę na stole z licznikiem (-1 = permanentnie) |
-| `Sequence(...)` | Wykonaj efekty po kolei |
-| `Conditional(cond, then, else)` | Warunkowe wykonanie |
-| `ForEachCardInZone` | Iteruj po kartach w strefie |
-| `ChooseCardFromZone` | Wymagaj decyzji gracza |
-| `DiscardChosenCard` | Odrzuć wybraną kartę |
-| `DiscardChosenFromHand` | Odrzuć wybraną kartę z ręki (Jasnowidzenie) |
-| `EmptyStomachToToilet` | Opróżnij żołądek |
-| `SkipDraw` | Pomiń dobieranie karty |
-| `AddModifier(type, value)` | Dodaj modyfikator ciągły (patrz sekcja Modyfikatory) |
-| `RemoveModifiersFromSource` | Usuń modyfikatory karty źródłowej |
-| `TransformIntoChosen` | Zamień kartę w ręce na wybraną (Kwantowa próżnia) |
+| Effect | Description |
+|--------|-------------|
+| `ReduceFat(n)` / `GainFat(n)` | Modify Fat |
+| `GainWillpower(n)` / `LoseWillpower(n)` | Modify Willpower |
+| `PlaceOnTable(turns)` | Place card on Table with counter (-1 = permanent) |
+| `Sequence(...)` | Execute effects in order |
+| `Conditional(cond, then, else)` | Conditional execution |
+| `ChooseCardFromZone` | Request player choice |
+| `AddModifier(type, value)` | Add continuous modifier |
+| `RemoveModifiersFromSource` | Remove source card's modifiers |
 
-### Warunki (`Core/Effects/Conditions/`)
+### Conditions (`Core/Effects/Conditions/`)
 
-- `HasFlavorInZone(zone, flavor)` - czy jest smak w strefie
-- `HasFlavorsInZone(zone, flavor1, flavor2)` - czy są OBA smaki
-- `CountUniqueFlavorsInZone(zone, minCount)` - ile różnych smaków
+- `HasFlavorInZone(zone, flavor)` - flavor exists in zone
+- `HasFlavorsInZone(zone, f1, f2)` - BOTH flavors exist
+- `CountUniqueFlavorsInZone(zone, min)` - unique flavor count
 
-### System Modyfikatorów (efekty ciągłe)
+### Continuous Modifiers
 
-Karty na Stole mogą mieć efekty ciągłe poprzez system modyfikatorów.
+Cards on Table can have ongoing effects via `ModifierType`:
+- `ExtraDrawThenDiscard` - draw extra cards, choose which one to keep (rest discarded via `KeepChosenDiscardRest`)
+- `ReduceCaloriesOnDraw` - reduce calories on drawn cards
 
 ```csharp
-// Core/State/ModifierType.cs
-public enum ModifierType
-{
-    ExtraDrawThenDiscard,   // Jasnowidzenie: +1 dobrana karta, potem wybór do odrzucenia
-    ReduceCaloriesOnDraw    // Dieta cud: -X kalorii na dobranych kartach
-}
-
-// Użycie w definicji karty
 OnEnterTable = new AddModifier(ModifierType.ExtraDrawThenDiscard, 1),
 OnLeaveTable = RemoveModifiersFromSource.Instance
 ```
 
-**Pliki**: `Core/State/ModifierType.cs`, `Core/State/ActiveModifier.cs`
+## Choice System Flow
 
-Modyfikatory są przechowywane w `GameState.ActiveModifiers` i aplikowane w `GameEngine.DrawCards()`.
+1. `ChooseCardFromZone.Execute()` returns `EffectResult.NeedsChoice`
+2. `GameEngine` sets `State.Phase = AwaitingChoice` and `State.PendingChoice`
+3. UI displays options, player selects
+4. `GameEngine.Choose(index)` continues with `PendingChoice.Continuation`
 
-## System Decyzji (Choice)
-
-Gdy efekt wymaga wyboru gracza:
-
-1. `ChooseCardFromZone.Execute()` zwraca `EffectResult.NeedsChoice`
-2. `GameEngine` ustawia `State.Phase = AwaitingChoice` i `State.PendingChoice`
-3. UI wyświetla opcje, gracz wybiera
-4. `GameEngine.Choose(index)` kontynuuje z `PendingChoice.Continuation`
-
-## Klasa Card
+## Card Triggers
 
 ```csharp
-public class Card {
-    // Identyfikacja
-    string Id;                 // np. "wyprawa_do_toalety"
-    string Name;               // "Wyprawa do toalety"
-    string? FlavorText;        // Tekst klimatyczny (kursywa)
-    string Instruction;        // Opis działania karty dla gracza
-
-    // Statystyki
-    Flavor Flavor;             // Smak (archetyp)
-    int WillpowerCost;         // Koszt SW
-    int Calories;              // Kaloryczność (get/set - może być modyfikowana przez efekty)
-
-    // Triggery (efekty)
-    IEffect? OnPlay;           // Po zagraniu
-    IEffect? OnEat;            // Po zjedzeniu
-    IEffect? OnDraw;           // Po dobraniu do ręki
-    IEffect? OnEnterTable;     // Po położeniu na stole
-    IEffect? OnLeaveTable;     // Po usunięciu ze stołu (dowolnym)
-    IEffect? OnTurnOnTable;    // Co turę gdy leży na stole
-    IEffect? OnTableCounterZero; // Gdy licznik = 0
-    IEffect? OnDiscard;        // Po trafieniu do kibelka
-}
+OnPlay           // After playing
+OnEat            // After eating
+OnDraw           // After drawing to hand
+OnEnterTable     // After placed on table
+OnLeaveTable     // After removed from table (any reason)
+OnTurnOnTable    // Each turn while on table
+OnTableCounterZero // When counter reaches 0
+OnDiscard        // After going to toilet
 ```
 
-## System Zdarzeń (Events)
+## Events System
 
-`GameEngine` emituje eventy (`Core/Events/`) dla UI:
+`GameEngine` emits events (`Core/Events/`) for UI animations:
 - `CardPlayedEvent`, `CardEatenEvent`, `CardDrawnEvent`
 - `FatChangedEvent`, `WillpowerChangedEvent`
 - `CardMovedEvent`, `CardDiscardedEvent`
@@ -160,187 +138,58 @@ public class Card {
 - `TurnStartedEvent`, `TableCounterTickedEvent`
 - `GameWonEvent`, `GameLostEvent`
 
-Eventy służą do animacji w SFML (Faza 2).
+## Critical: JSON Serialization Pitfalls
 
-## Uruchamianie
+**Never compare card references after JSON restore** - cards are cloned from `CardRegistry`:
 
-```bash
-# Desktop (graficzny interfejs - zalecane)
-dotnet run --project Caladabra.Desktop
-
-# Tryb interaktywny (gra w konsoli)
-dotnet run --project Caladabra.Console -- interactive
-
-# Test mechanik
-dotnet run --project Caladabra.Console -- test
-
-# Tryb JSON (turn-by-turn, AI-friendly)
-dotnet run --project Caladabra.Console -- new [--seed N] [--state path] [--deck plik.json]
-dotnet run --project Caladabra.Console -- status [--state path]
-dotnet run --project Caladabra.Console -- play N [--state path]
-dotnet run --project Caladabra.Console -- eat N [--state path]
-dotnet run --project Caladabra.Console -- choose N [--state path]
-dotnet run --project Caladabra.Console -- info <nazwa>
-```
-
-Tryb JSON zapisuje stan gry do `game.json` (domyślnie) i zwraca JSON na stdout.
-
-### Opcja --deck (custom deck)
-
-Pozwala załadować talię z pliku JSON zamiast standardowej 60-kartowej:
-
-```json
-["jasnowidzenie", "diabelski_bumerang", "diabelski_bumerang", "lizak_na_oslode"]
-```
-
-Karty są w dokładnie takiej kolejności jak w pliku (bez tasowania). Przydatne do testowania.
-
-### Komendy w trybie interaktywnym
-
-| Komenda | Aliasy | Opis |
-|---------|--------|------|
-| `play <nr>` | `p` | Zagraj kartę o podanym numerze |
-| `eat <nr>` | `e` | Zjedz kartę o podanym numerze |
-| `choose <nr>` | `c` | Wybierz opcję (gdy gra czeka na decyzję) |
-| `info <nr>` | `i`, `inspect` | Pokaż kartę z ręki |
-| `info <nazwa>` | | Szukaj karty po nazwie (np. `info Wilczy`) |
-| `info <strefa> <nr>` | | Pokaż kartę ze strefy (hand/table/stomach/toilet) |
-| `status` | `s` | Pokaż stan gry |
-| `quit` | `q`, `exit` | Zakończ grę |
-
-## TODO / Niezaimplementowane
-
-### Efekty Kart - WSZYSTKIE ZAIMPLEMENTOWANE ✅
-
-Wszystkie 18 kart z prototypowej talii ma działające efekty.
-
-### Inne
-
-- [x] ~~Turn-by-turn mode z JSON (JsonRunner)~~ - ZAIMPLEMENTOWANE
-- [x] ~~Serializacja GameState do JSON~~ - ZAIMPLEMENTOWANE
-- [x] ~~System modyfikatorów (efekty ciągłe)~~ - ZAIMPLEMENTOWANE
-- [x] ~~Custom deck z pliku JSON (--deck)~~ - ZAIMPLEMENTOWANE
-- [x] ~~Wszystkie efekty kart~~ - ZAIMPLEMENTOWANE
-- [x] ~~Faza 2: SFML.Net Desktop~~ - ZAIMPLEMENTOWANE
-- [x] ~~Animacje kart~~ - ZAIMPLEMENTOWANE (CardMoveAnimation, elevation system)
-- [ ] Unit testy (odłożone)
-- [ ] Balans kart
-
-## Testowanie Gry
-
-### Tworzenie testowych talii (--deck)
-
-Użyj opcji `--deck` do załadowania własnej talii z pliku JSON:
-
-```bash
-dotnet run --project Caladabra.Console -- new --deck test_deck.json
-```
-
-**WAŻNE: Kolejność kart w JSON**
-- Karty są ładowane do Spiżarni metodą `AddToBottom`
-- Dobieranie (`Draw`) pobiera karty z góry stosu
-- **Ostatnie karty w JSON będą pierwszymi dobranym** (trafią na górę stosu)
-- **Pierwsze karty w JSON będą ostatnimi dobranym** (trafią na spód stosu)
-
-Przykład - chcesz zacząć z Jasnowidzeniem na ręce:
-```json
-[
-  "lizak_na_oslode",    // dobrana jako 9ta (na spodzie)
-  "lizak_na_oslode",    // dobrana jako 8ma
-  "baton_energetyczny", // dobrana jako 7ma
-  "baton_energetyczny", // dobrana jako 6ta
-  "hat_trick",          // dobrana jako 5ta
-  "hat_trick",          // na ręce (4ta)
-  "diabelski_bumerang", // na ręce (3cia)
-  "diabelski_bumerang", // na ręce (2ga)
-  "wilczy_glod",        // na ręce (1sza)
-  "jasnowidzenie"       // na ręce (ostatnia = 0)
-]
-```
-
-Ostatnie 5 kart (indeksy 5-9) trafia na rękę startową.
-
-### Typowe błędy z serializacją JSON
-
-**Problem: Porównywanie referencji po załadowaniu z JSON**
-
-Po zapisie/odczycie stanu gry z JSON, karty są klonowane z `CardRegistry`. Nie są to te same instancje obiektów!
-
-❌ **ŹLE** - nie zadziała po JSON restore:
 ```csharp
-var index = hand.Cards.IndexOf(context.SourceCard);  // -1 bo różne instancje!
-hand.Cards.Contains(card)  // false!
-```
+// WRONG - fails after JSON restore
+var index = hand.Cards.IndexOf(context.SourceCard);  // returns -1!
 
-✅ **DOBRZE** - używaj ID lub indeksów:
-```csharp
+// CORRECT - use ID or stored indices
 var index = hand.Cards.ToList().FindIndex(c => c.Id == context.SourceCard.Id);
-context.ChosenIndices[0]  // użyj zapisanego indeksu
+context.ChosenIndices[0]  // use saved index
 ```
 
-**Pliki które musiały być naprawione z tego powodu:**
-- `DiscardChosenFromHand.cs` - używa `context.ChosenIndices[0]` zamiast `ChosenCard`
-- `TransformIntoChosen.cs` - szuka po `c.Id == context.SourceCard.Id`
-
-### EffectTrigger dla PendingChoice
-
-Gdy tworzysz `PendingChoice`, **zawsze ustaw `EffectTrigger`**! Jest potrzebny do odtworzenia kontynuacji po JSON restore.
-
-Wartości w `JsonRunner.RestorePendingChoice`:
+**Always set `EffectTrigger` on `PendingChoice`** - needed for continuation restore:
 - `"OnPlay"` → `sourceCard.OnPlay`
 - `"OnEat"` → `sourceCard.OnEat`
 - `"OnDraw"` → `sourceCard.OnDraw`
-- `"Discard"` → `DiscardChosenFromHand.Instance` (Jasnowidzenie)
+- `"Discard"` → `DiscardChosenFromHand.Instance`
 
-Jeśli `EffectTrigger` jest null/nieznany, domyślnie używa `OnPlay` - co może spowodować dziwne błędy!
+## Custom Deck Order
 
-### Testowanie konkretnych mechanik
+Cards loaded via `--deck` go to Pantry with `AddToBottom`. Drawing takes from top.
 
-#### Karty z modyfikatorami (Jasnowidzenie, Dieta cud)
+**Last cards in JSON = first cards drawn:**
+```json
+[
+  "some_card",        // drawn last (bottom of deck)
+  "another_card",     // ...
+  "jasnowidzenie"     // drawn first (top of deck, goes to starting hand)
+]
+```
 
-1. Zagraj kartę → trafia na Stół → `OnEnterTable` dodaje modyfikator
-2. Wykonaj akcję (Play/Eat) → `DrawCards` sprawdza `ActiveModifiers`
-3. Gdy karta schodzi ze Stołu → `OnLeaveTable` usuwa modyfikatory
+Last 5 cards in JSON become the starting hand.
 
-#### Kwantowa próżnia (OnDraw + transformacja)
+## Debugging Tips
 
-1. Dobierz Kwantową próżnię → `OnDraw` requestuje choice z CardList
-2. Wybierz kartę z listy → `TransformIntoChosen` zamienia kartę w ręce
-3. Nowa karta ma pełną funkcjonalność (można ją zagrać/zjeść normalnie)
+1. Check `State.Phase` when game seems stuck on choice
+2. Check `State.PendingChoice.EffectTrigger` is set correctly
+3. Use `--state custom.json` to avoid overwriting `game.json`
+4. Compare JSON state before/after actions
 
-#### Karty na Stole z licznikiem
+## Common Issues
 
-1. `PlaceOnTable(3)` → karta trafia na Stół z licznikiem 3
-2. Co turę: `ProcessStartOfTurn()` zmniejsza licznik, wywołuje `OnTurnOnTable`
-3. Gdy licznik = 0: `OnTableCounterZero`, potem `OnLeaveTable`, potem do Kibelka
+- **Card not going to Toilet** → effect moved it elsewhere (Table, Pantry)
+- **Modifier not working** → check `OnEnterTable` adds and `OnLeaveTable` removes
+- **Choice fails after JSON restore** → check `EffectTrigger` and `RestorePendingChoice`
+- **Card "disappears"** → reference comparison instead of ID comparison
 
-### Przykładowe talie testowe
+## Conventions
 
-Pliki w głównym katalogu projektu:
-
-| Plik | Testuje |
-|------|---------|
-| `test_jasnowidzenie.json` | ExtraDrawThenDiscard, odrzucanie kart |
-| `test_kwantowa_proznia.json` | OnDraw, transformacja, CardList choice |
-
-### Debugowanie
-
-1. **Sprawdź `State.Phase`** - jeśli gra czeka na choice a nie wiesz dlaczego
-2. **Sprawdź `State.PendingChoice.EffectTrigger`** - czy jest ustawiony poprawnie
-3. **Użyj `--state custom.json`** - żeby nie nadpisywać `game.json` podczas testów
-4. **Porównaj stan przed/po** - zapisz JSON, wykonaj akcję, porównaj zmiany
-
-### Częste pułapki
-
-- **Karta nie trafia do Kibelka** → może efekt przeniósł ją do innej strefy (Table, Pantry)
-- **Modyfikator nie działa** → sprawdź czy `OnEnterTable` dodaje i `OnLeaveTable` usuwa
-- **Choice nie działa po JSON restore** → sprawdź `EffectTrigger` i `RestorePendingChoice`
-- **Karta "znika"** → porównywanie referencji zamiast ID (patrz sekcja wyżej)
-
-## Konwencje
-
-- Język kodu: angielski (nazwy klas, metod)
-- Język komunikatów/UI: polski
-- Wszystkie karty mają unikalne `Id` (snake_case, np. `wyprawa_do_toalety`)
-- Strefy: `CardList`, `Pantry`, `Hand`, `Table`, `Stomach`, `Toilet`
-- Smaki: `Salty`, `Sweet`, `Bitter`, `Spicy`, `Sour`, `Umami`
+- Code language: English (class names, methods)
+- UI/messages language: Polish
+- Card IDs: snake_case (e.g., `wyprawa_do_toalety`)
+- Zones: `CardList`, `Pantry`, `Hand`, `Table`, `Stomach`, `Toilet`
+- Flavors: `Salty`, `Sweet`, `Bitter`, `Spicy`, `Sour`, `Umami`
