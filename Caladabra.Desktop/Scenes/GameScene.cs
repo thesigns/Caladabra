@@ -31,7 +31,9 @@ public sealed class GameScene : IScene
     private Text _fatLabel = null!;
     private Text _willpowerLabel = null!;
     private Text _turnLabel = null!;
+    private Text _timeLabel = null!;
     private Text _infoText = null!;
+    private float _gameTime = 0f;
 
     // Hover & interaction state
     private Card? _hoveredCard;
@@ -120,6 +122,11 @@ public sealed class GameScene : IScene
         };
 
         _turnLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeStats))
+        {
+            FillColor = Theme.TextPrimary
+        };
+
+        _timeLabel = new Text(font, "", _game.Scale.S(Theme.FontSizeStats))
         {
             FillColor = Theme.TextPrimary
         };
@@ -345,6 +352,12 @@ public sealed class GameScene : IScene
         // Track total time for double-click detection
         _totalTime += deltaTime;
 
+        // Track game time for speedrunners (stop on game over)
+        if (!_controller.IsGameOver)
+        {
+            _gameTime += deltaTime;
+        }
+
         // Process game events and trigger animations
         ProcessGameEvents();
 
@@ -383,6 +396,7 @@ public sealed class GameScene : IScene
         _fatLabel.DisplayedString = $"Tłuszcz: {State.Fat}";
         _willpowerLabel.DisplayedString = $"Siła Woli: {State.Willpower}/{GameRules.MaxWillpower}";
         _turnLabel.DisplayedString = $"Tura: {State.Turn}/{GameRules.MaxTurns}";
+        _timeLabel.DisplayedString = $"Czas gry: {_gameTime:F3}";
 
         // Update info text based on game state
         if (_controller.IsGameOver)
@@ -804,7 +818,8 @@ public sealed class GameScene : IScene
         var fatBounds = _fatLabel.GetLocalBounds();
         var wpBounds = _willpowerLabel.GetLocalBounds();
         var turnBounds = _turnLabel.GetLocalBounds();
-        float totalWidth = fatBounds.Size.X + wpBounds.Size.X + turnBounds.Size.X + spacing * 2;
+        var timeBounds = _timeLabel.GetLocalBounds();
+        float totalWidth = fatBounds.Size.X + wpBounds.Size.X + turnBounds.Size.X + timeBounds.Size.X + spacing * 3;
 
         // Wyśrodkuj wszystko
         float startX = (_game.Scale.CurrentWidth - totalWidth) / 2;
@@ -817,6 +832,9 @@ public sealed class GameScene : IScene
 
         _turnLabel.Position = new Vector2f(startX + fatBounds.Size.X + wpBounds.Size.X + spacing * 2, y);
         window.Draw(_turnLabel);
+
+        _timeLabel.Position = new Vector2f(startX + fatBounds.Size.X + wpBounds.Size.X + turnBounds.Size.X + spacing * 3, y);
+        window.Draw(_timeLabel);
     }
 
     private void DrawPreviewPanel(RenderWindow window)
@@ -1175,6 +1193,7 @@ public sealed class GameScene : IScene
         _fatLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
         _willpowerLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
         _turnLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
+        _timeLabel.CharacterSize = _game.Scale.S(Theme.FontSizeStats);
         _infoText.CharacterSize = _game.Scale.S(Theme.FontSizeInfoText);
     }
 
