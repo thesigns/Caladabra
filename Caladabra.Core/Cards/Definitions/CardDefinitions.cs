@@ -155,7 +155,7 @@ public static class CardDefinitions
             Flavor = Flavor.Sweet,
             WillpowerCost = 1,
             Calories = 0,
-            FlavorText = "Czasem coś słodkiego pozwala zapomnieć o tym co gorzkie.",
+            FlavorText = "Czasem słodycz pozwala zapomnieć o gorzkim.",
             Instruction = "Po zagraniu tej karty za każdą gorzką kartę w Ręce, Żołądku i na Stole dostajesz 3 punkty SW.",
             OnPlay = ForEachCardInZone.Create(
                 [ZoneType.Hand, ZoneType.Stomach, ZoneType.Table],
