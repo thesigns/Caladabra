@@ -152,7 +152,7 @@ public sealed class GameScene : IScene
     {
         if (sfmlEvent.Type == EventType.KeyPressed && sfmlEvent.Key.Code == Keyboard.Key.Escape)
         {
-            _game.Window.Close();
+            _game.SceneManager.ReplaceScene(new MainMenuScene(_game));
         }
 
         if (sfmlEvent.Type == EventType.Resized)
