@@ -56,11 +56,11 @@ public sealed class GameScene : IScene
     private float _lastClickTime = 0f;
     private int _lastClickHandIndex = -1;
     private const float DoubleClickThreshold = 0.3f;  // 300ms
-    private const float EatProgressBarDelay = 0.3f;    // Wait before showing bar
-    private const float EatProgressBarDuration = 0.7f; // Time to fill the bar
+    private const float EatProgressBarDelay = 0.25f;    // Wait before showing effect
+    private const float EatProgressBarDuration = 0.55f; // Time for eating animation
 
-    // Eating progress bar
-    private ProgressBar _eatProgressBar = null!;
+    // Eating visual effect
+    private CardEatingEffect _eatingEffect = null!;
 
     // CardList scene state
     private bool _cardListSceneOpen = false;
@@ -136,12 +136,8 @@ public sealed class GameScene : IScene
             FillColor = Theme.TextSecondary
         };
 
-        // Eating progress bar
-        _eatProgressBar = new ProgressBar(font, _game.Scale)
-        {
-            Label = "Zjadam",
-            IsVisible = false
-        };
+        // Eating visual effect
+        _eatingEffect = new CardEatingEffect(_game.Assets);
 
         UpdateLayout();
     }
@@ -338,7 +334,8 @@ public sealed class GameScene : IScene
         _isMousePressed = false;
         _mouseHoldTime = 0f;
         _mouseHoldHandIndex = -1;
-        _eatProgressBar.IsVisible = false;
+        _eatingEffect.IsActive = false;
+        _eatingEffect.Progress = 0f;
     }
 
     private void ShowErrorMessage(string message)
@@ -431,7 +428,8 @@ public sealed class GameScene : IScene
     {
         if (!_isMousePressed || _mouseHoldHandIndex < 0)
         {
-            _eatProgressBar.IsVisible = false;
+            _eatingEffect.IsActive = false;
+            _eatingEffect.Progress = 0f;
             return;
         }
 
@@ -444,57 +442,24 @@ public sealed class GameScene : IScene
 
         _mouseHoldTime += deltaTime;
 
-        // Phase 1: Delay before showing progress bar (0.3s)
+        // Phase 1: Delay before showing eating effect (0.3s)
         if (_mouseHoldTime < EatProgressBarDelay)
         {
-            _eatProgressBar.IsVisible = false;
+            _eatingEffect.IsActive = false;
+            _eatingEffect.Progress = 0f;
             return;
         }
 
-        // Phase 2: Show and fill progress bar (0.7s)
+        // Phase 2: Show eating effect (0.7s)
         var progressTime = _mouseHoldTime - EatProgressBarDelay;
-        _eatProgressBar.Progress = progressTime / EatProgressBarDuration;
-        _eatProgressBar.IsVisible = true;
-
-        // Position progress bar at center of held card
-        PositionEatProgressBar();
+        _eatingEffect.Progress = progressTime / EatProgressBarDuration;
+        _eatingEffect.IsActive = true;
 
         // Check if hold time exceeded - eat the card
         if (progressTime >= EatProgressBarDuration)
         {
             TryEatCard(_mouseHoldHandIndex);
         }
-    }
-
-    private void PositionEatProgressBar()
-    {
-        // Calculate card position in hand
-        var handCards = State.Hand.Cards.ToList();
-        if (_mouseHoldHandIndex < 0 || _mouseHoldHandIndex >= handCards.Count)
-            return;
-
-        var card = handCards[_mouseHoldHandIndex];
-        var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.HandScale);
-        float spacing = cardSize.X * CardSpacingRatio;
-        float totalWidth = handCards.Count * cardSize.X + (handCards.Count - 1) * spacing;
-        float startX = (_game.Scale.CurrentWidth - totalWidth) / 2;
-        float y = _game.Scale.CurrentHeight - _game.Scale.S(HandYOffset);
-
-        // Apply elevation offset (same as in DrawHandZone)
-        if (_cardElevation.TryGetValue(card.Id, out var elevation) && elevation > 0)
-        {
-            y -= cardSize.Y * ElevationRatio * elevation;
-        }
-
-        float cardX = startX + _mouseHoldHandIndex * (cardSize.X + spacing);
-        float cardCenterX = cardX + cardSize.X / 2;
-        float cardCenterY = y + cardSize.Y / 2;
-
-        // Position progress bar centered on card
-        _eatProgressBar.Position = new Vector2f(
-            cardCenterX - _eatProgressBar.Size.X / 2,
-            cardCenterY - _eatProgressBar.Size.Y / 2
-        );
     }
 
     private void UpdateCardElevations(float deltaTime)
@@ -795,9 +760,6 @@ public sealed class GameScene : IScene
             DrawTableZone(window);
 
         DrawHandZone(window);
-
-        // Eating progress bar (on top of card)
-        _eatProgressBar.Draw(window);
 
         // Info text at bottom
         DrawInfoBar(window);
@@ -1116,7 +1078,15 @@ public sealed class GameScene : IScene
                 // Tint dla podświetlenia (hover lub choice) - bez dodatkowego unoszenia
                 Color? tint = (isHovered || isChoiceOption) ? new Color(255, 255, 180) : null;
 
-                _cardRenderer.Draw(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, tint);
+                // Use eating effect for card being held
+                if (i == _mouseHoldHandIndex && _eatingEffect.IsActive)
+                {
+                    _eatingEffect.DrawEatingCard(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, _cardRenderer, tint);
+                }
+                else
+                {
+                    _cardRenderer.Draw(window, card, new Vector2f(cardX, cardY), CardDisplayMode.Small, scale, tint);
+                }
             }
         }
 
@@ -1517,9 +1487,9 @@ public sealed class GameScene : IScene
                     AnimateCardFromHand(played.Card, played.HandIndex);
                     break;
 
-                case CardEatenEvent eaten:
-                    // Karta została zjedzona - animuj z ręki do żołądka
-                    AnimateCardEat(eaten.Card, eaten.HandIndex);
+                case CardEatenEvent:
+                    // Karta została zjedzona - nie animuj, bo efekt zjadania już ją "usunął"
+                    // Karta pojawi się w żołądku natychmiast
                     break;
 
                 case CardDiscardedEvent discarded:

@@ -26,13 +26,13 @@ public static class Theme
     public const float CardCornerRadius = 10f;
     public const float CardBorderWidth = 3f;
 
-    // Font sizes (base, before scaling)
+// Font sizes (base, before scaling)
     public const uint FontSizeSmall = 12;
     public const uint FontSizeNormal = 14;
     public const uint FontSizeMedium = 18;
     public const uint FontSizeLarge = 24;
     public const uint FontSizeTitle = 32;
-    public const uint FontSizeInfoText = 21;
+    public const uint FontSizeInfoText = 22;
     public const uint FontSizeStats = 30;
 
     // Card-specific font sizes

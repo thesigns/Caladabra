@@ -71,6 +71,34 @@ public sealed class AssetManager
         return GetTexture(path);
     }
 
+    // === Eating masks ===
+
+    private int _eatingMaskCount = -1;
+
+    /// <summary>
+    /// Number of eating mask stages available (detected on first access).
+    /// </summary>
+    public int EatingMaskCount
+    {
+        get
+        {
+            if (_eatingMaskCount < 0)
+            {
+                _eatingMaskCount = 0;
+                var masksDir = Path.Combine(_basePath, "Cards", "Masks");
+                while (File.Exists(Path.Combine(masksDir, $"eat_{_eatingMaskCount}.png")))
+                    _eatingMaskCount++;
+            }
+            return _eatingMaskCount;
+        }
+    }
+
+    /// <summary>
+    /// Gets eating mask texture by index (0, 1, 2, ...).
+    /// </summary>
+    public Texture GetEatingMask(int index) =>
+        GetTexture(Path.Combine("Cards", "Masks", $"eat_{index}.png"));
+
     public void PreloadAssets()
     {
         // Preload default font
