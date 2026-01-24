@@ -436,7 +436,7 @@ public static class CardDefinitions
                 "Wybierz kartę na Stole do usunięcia w następnej turze.",
                 continuation: new TransformTableCard(
                     "Usuń tę kartę ze stołu w następnej turze.",
-                    turnsRemaining: 1
+                    turnsRemaining: 0  // 0 = usuń przy następnym tick
                 )
             )
         });

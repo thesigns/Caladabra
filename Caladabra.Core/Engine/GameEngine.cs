@@ -408,11 +408,32 @@ public sealed class GameEngine
     /// </summary>
     private void EnsureTurnStartProcessed(List<IGameEvent> events)
     {
+        // ZAWSZE usuwaj transformowane karty z TurnsRemaining=0
+        // (nawet jeśli tick dla tej tury już się odbył)
+        RemoveExpiredTransformedCards(events);
+
         if (State.Turn > _lastProcessedTurn)
         {
             var turnEvents = ProcessStartOfTurn();
             events.AddRange(turnEvents);
             _lastProcessedTurn = State.Turn;
+        }
+    }
+
+    /// <summary>
+    /// Usuwa transformowane karty z TurnsRemaining=0 (np. po "Było i nie ma").
+    /// </summary>
+    private void RemoveExpiredTransformedCards(List<IGameEvent> events)
+    {
+        var toRemove = State.Table.Entries
+            .Where(e => e.IsTransformed && e.TurnsRemaining == 0)
+            .ToList();
+
+        foreach (var entry in toRemove)
+        {
+            State.Table.Remove(entry.Card);
+            State.Toilet.Add(entry.Card);
+            events.Add(new CardDiscardedEvent(entry.Card, ZoneType.Table));
         }
     }
 

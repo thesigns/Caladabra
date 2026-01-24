@@ -120,13 +120,21 @@ public sealed class Table : IZone
 
         foreach (var entry in _entries)
         {
-            // Dekrementuj tylko gdy > 0 (pomijaj permanentne karty z -1)
-            if (entry.TurnsRemaining.HasValue && entry.TurnsRemaining.Value > 0)
+            if (entry.TurnsRemaining.HasValue)
             {
-                entry.TurnsRemaining--;
-                if (entry.TurnsRemaining == 0)
+                // TurnsRemaining=0 oznacza "już wygasła, usuń przy tym tick"
+                if (entry.TurnsRemaining.Value == 0)
                 {
                     expired.Add(entry.Card);
+                }
+                // Dekrementuj gdy > 0 (pomijaj permanentne karty z -1)
+                else if (entry.TurnsRemaining.Value > 0)
+                {
+                    entry.TurnsRemaining--;
+                    if (entry.TurnsRemaining == 0)
+                    {
+                        expired.Add(entry.Card);
+                    }
                 }
             }
         }

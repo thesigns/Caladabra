@@ -30,6 +30,7 @@ public sealed class TransformTableCard : IEffect
         context.State.ActiveModifiers.RemoveAll(m => m.SourceCard.Id == entry.Card.Id);
 
         // Transformuj kartę
+        // turnsRemaining=0 oznacza "usuń przy następnym tick" (bo tick dla bieżącej tury już się odbył)
         entry.IsTransformed = true;
         entry.OverriddenInstruction = _newInstruction;
         entry.TurnsRemaining = _turnsRemaining;
