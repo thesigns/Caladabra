@@ -13,6 +13,17 @@ public sealed class TableEntry
 
     /// <summary>Pozostała liczba tur (null = permanentnie).</summary>
     public int? TurnsRemaining { get; set; }
+
+    /// <summary>
+    /// Czy karta została "transformowana" (np. przez "Było i nie ma").
+    /// Gdy true, oryginalne efekty karty (OnTurnOnTable, OnTableCounterZero, OnLeaveTable) są ignorowane.
+    /// </summary>
+    public bool IsTransformed { get; set; }
+
+    /// <summary>
+    /// Nadpisana instrukcja karty (wyświetlana zamiast oryginalnej gdy IsTransformed = true).
+    /// </summary>
+    public string? OverriddenInstruction { get; set; }
 }
 
 /// <summary>

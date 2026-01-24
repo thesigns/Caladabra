@@ -421,7 +421,7 @@ public static class CardDefinitions
         });
 
         // Było i nie ma - SW:5, Kal:1
-        // Po zagraniu: wybierz kartę na Stole, zmień jej instrukcję na "Usuń ze stołu w następnej turze"
+        // Po zagraniu: wybierz kartę na Stole, transformuj ją (zablokuj efekty, zmień instrukcję, ustaw licznik na 1)
         registry.Register(new Card
         {
             Id = "bylo_i_nie_ma",
@@ -434,7 +434,10 @@ public static class CardDefinitions
             OnPlay = new ChooseCardFromZone(
                 ZoneType.Table,
                 "Wybierz kartę na Stole do usunięcia w następnej turze.",
-                continuation: new SetTableCounterTo(1)
+                continuation: new TransformTableCard(
+                    "Usuń tę kartę ze stołu w następnej turze.",
+                    turnsRemaining: 1
+                )
             )
         });
 

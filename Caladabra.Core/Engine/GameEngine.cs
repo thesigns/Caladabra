@@ -427,6 +427,11 @@ public sealed class GameEngine
         // Zmniejsz liczniki kart na stole
         var expiredCards = State.Table.TickCounters();
 
+        // Zbierz entries przed tick (żeby mieć dostęp do IsTransformed)
+        var entriesBeforeTick = State.Table.Entries
+            .Select(e => new { Entry = e, WasTransformed = e.IsTransformed })
+            .ToList();
+
         foreach (var entry in State.Table.Entries.ToList())
         {
             var card = entry.Card;
@@ -437,8 +442,8 @@ public sealed class GameEngine
                 events.Add(new TableCounterTickedEvent(card, entry.TurnsRemaining.Value + 1, entry.TurnsRemaining.Value));
             }
 
-            // Wykonaj OnTurnOnTable
-            if (card.OnTurnOnTable != null)
+            // Wykonaj OnTurnOnTable (chyba że karta jest transformowana)
+            if (card.OnTurnOnTable != null && !entry.IsTransformed)
             {
                 var context = CreateEffectContext(card, events);
                 card.OnTurnOnTable.Execute(context);
@@ -448,17 +453,21 @@ public sealed class GameEngine
         // Usuń wygasłe karty
         foreach (var card in expiredCards)
         {
+            // Znajdź czy karta była transformowana
+            var wasTransformed = entriesBeforeTick
+                .FirstOrDefault(e => e.Entry.Card.Id == card.Id)?.WasTransformed ?? false;
+
             State.Table.Remove(card);
 
-            // Wykonaj OnTableCounterZero
-            if (card.OnTableCounterZero != null)
+            // Wykonaj OnTableCounterZero (chyba że karta była transformowana)
+            if (card.OnTableCounterZero != null && !wasTransformed)
             {
                 var context = CreateEffectContext(card, events);
                 card.OnTableCounterZero.Execute(context);
             }
 
-            // Wykonaj OnLeaveTable
-            if (card.OnLeaveTable != null)
+            // Wykonaj OnLeaveTable (chyba że karta była transformowana)
+            if (card.OnLeaveTable != null && !wasTransformed)
             {
                 var context = CreateEffectContext(card, events);
                 card.OnLeaveTable.Execute(context);

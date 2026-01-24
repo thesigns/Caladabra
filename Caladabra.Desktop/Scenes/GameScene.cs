@@ -37,6 +37,7 @@ public sealed class GameScene : IScene
 
     // Hover & interaction state
     private Card? _hoveredCard;
+    private string? _hoveredOverriddenInstruction;  // Nadpisana instrukcja dla transformowanych kart
     private int _hoveredHandIndex = -1;
     private int _hoveredTableIndex = -1;
     private int _hoveredStomachIndex = -1;
@@ -499,6 +500,7 @@ public sealed class GameScene : IScene
     private void UpdateHoveredCard()
     {
         _hoveredCard = null;
+        _hoveredOverriddenInstruction = null;
         _hoveredHandIndex = -1;
         _hoveredTableIndex = -1;
         _hoveredStomachIndex = -1;
@@ -558,25 +560,26 @@ public sealed class GameScene : IScene
 
     private bool CheckTableHover()
     {
-        var cards = State.Table.Cards.ToList();
-        if (cards.Count == 0) return false;
+        var entries = State.Table.Entries.ToList();
+        if (entries.Count == 0) return false;
 
         var cardSize = _cardRenderer.GetCardSize(ZoneRenderer.TableScale);
         float spacing = cardSize.X * CardSpacingRatio;
-        float totalWidth = cards.Count * cardSize.X + (cards.Count - 1) * spacing;
+        float totalWidth = entries.Count * cardSize.X + (entries.Count - 1) * spacing;
 
         float centerX = _game.Scale.CurrentWidth / 2;
         float startX = centerX - totalWidth / 2;
         float y = _game.Scale.S(StatusTextHeight + 100f) + cardSize.Y * 0.5f;
 
-        for (int i = 0; i < cards.Count; i++)
+        for (int i = 0; i < entries.Count; i++)
         {
             float cardX = startX + i * (cardSize.X + spacing);
             var cardRect = new FloatRect(new Vector2f(cardX, y), cardSize);
 
             if (cardRect.Contains(new Vector2f(_mousePosition.X, _mousePosition.Y)))
             {
-                _hoveredCard = cards[i];
+                _hoveredCard = entries[i].Card;
+                _hoveredOverriddenInstruction = entries[i].OverriddenInstruction;
                 _hoveredTableIndex = i;
                 return true;
             }
@@ -811,7 +814,8 @@ public sealed class GameScene : IScene
             float availableHeight = _game.Scale.CurrentHeight - baseY - _game.Scale.S(HandYOffset);
             float cardY = baseY + (availableHeight - cardSize.Y) / 2;
             var cardPos = new Vector2f(x, cardY);
-            _cardRenderer.Draw(window, _hoveredCard, cardPos, CardDisplayMode.Full, PreviewScale);
+            _cardRenderer.Draw(window, _hoveredCard, cardPos, CardDisplayMode.Full, PreviewScale,
+                overriddenInstruction: _hoveredOverriddenInstruction);
         }
     }
 
@@ -931,7 +935,7 @@ public sealed class GameScene : IScene
         var cards = State.Stomach.Cards.ToList();
 
         // Label
-        var label = new Text(_game.Assets.DefaultFont, $"Żołądek [{cards.Count}]", _game.Scale.S(Theme.FontSizeSmall))
+        var label = new Text(_game.Assets.DefaultFont, $"Żołądek", _game.Scale.S(Theme.FontSizeNormal))
         {
             FillColor = Theme.TextSecondary,
             Position = new Vector2f(x, y)
@@ -989,7 +993,7 @@ public sealed class GameScene : IScene
         var entries = State.Table.Entries.ToList();
 
         // Label
-        var label = new Text(_game.Assets.DefaultFont, "Stół", _game.Scale.S(Theme.FontSizeSmall))
+        var label = new Text(_game.Assets.DefaultFont, "Stół", _game.Scale.S(Theme.FontSizeNormal))
         {
             FillColor = Theme.TextSecondary
         };

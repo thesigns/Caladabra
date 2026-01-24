@@ -51,9 +51,10 @@ public sealed class CardRenderer
     /// <param name="mode">Tryb wyświetlania (Full, Small, Tiny, Back)</param>
     /// <param name="scale">Skala karty (1.0 = rozmiar bazowy)</param>
     /// <param name="tint">Opcjonalny kolor tintu (podświetlenie)</param>
+    /// <param name="overriddenInstruction">Nadpisana instrukcja (np. dla transformowanych kart)</param>
     public void Draw(IRenderTarget target, Card card, Vector2f position,
                      CardDisplayMode mode = CardDisplayMode.Full, float scale = 1.0f,
-                     Color? tint = null)
+                     Color? tint = null, string? overriddenInstruction = null)
     {
         // Rozmiar obliczany z proporcji i skali
         float height = _scale.S(BaseHeight * scale);
@@ -96,7 +97,8 @@ public sealed class CardRenderer
         // Tryb Full - dodaj instrukcję i flavor text
         if (mode == CardDisplayMode.Full)
         {
-            DrawInstruction(target, card.Instruction, position, width, height, padding, card.Flavor);
+            var instruction = overriddenInstruction ?? card.Instruction;
+            DrawInstruction(target, instruction, position, width, height, padding, card.Flavor);
 
             if (!string.IsNullOrEmpty(card.FlavorText))
             {
