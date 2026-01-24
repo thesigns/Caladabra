@@ -4,8 +4,8 @@ namespace Caladabra.Desktop.Core;
 
 public sealed class GameSettings
 {
-    public uint ScreenWidth { get; set; } = 1920;
-    public uint ScreenHeight { get; set; } = 1080;
+    public uint ScreenWidth { get; set; } = ScreenManager.GetDefaultWindowResolution().Width;
+    public uint ScreenHeight { get; set; } = ScreenManager.GetDefaultWindowResolution().Height;
     public bool Fullscreen { get; set; } = false;
     public string Locale { get; set; } = "pl";
     public float MasterVolume { get; set; } = 1.0f;

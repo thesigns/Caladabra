@@ -25,14 +25,7 @@ public sealed class OptionsScene : IScene
 
     private List<Button> _buttons = null!;
 
-    private static readonly (uint Width, uint Height, string Label)[] Resolutions =
-    [
-        (1280, 720, "1280 x 720"),
-        (1600, 900, "1600 x 900"),
-        (1920, 1080, "1920 x 1080"),
-        (2560, 1440, "2560 x 1440")
-    ];
-
+    private (uint Width, uint Height, string Label)[] _availableResolutions = null!;
     private int _selectedResolutionIndex;
     private bool _selectedFullscreen;
     private bool _hasChanges;
@@ -49,6 +42,9 @@ public sealed class OptionsScene : IScene
 
     public void Enter()
     {
+        // Get available resolutions for this monitor
+        _availableResolutions = ScreenManager.GetAvailableResolutions();
+
         // Initialize from current settings
         _selectedFullscreen = _game.Settings.Fullscreen;
         _selectedResolutionIndex = FindCurrentResolutionIndex();
@@ -308,10 +304,10 @@ public sealed class OptionsScene : IScene
 
     private int FindCurrentResolutionIndex()
     {
-        for (int i = 0; i < Resolutions.Length; i++)
+        for (int i = 0; i < _availableResolutions.Length; i++)
         {
-            if (Resolutions[i].Width == _game.Settings.ScreenWidth &&
-                Resolutions[i].Height == _game.Settings.ScreenHeight)
+            if (_availableResolutions[i].Width == _game.Settings.ScreenWidth &&
+                _availableResolutions[i].Height == _game.Settings.ScreenHeight)
             {
                 return i;
             }
@@ -321,12 +317,12 @@ public sealed class OptionsScene : IScene
 
     private string GetCurrentResolutionLabel()
     {
-        return Resolutions[_selectedResolutionIndex].Label;
+        return _availableResolutions[_selectedResolutionIndex].Label;
     }
 
     private void UpdateChangesState()
     {
-        var current = Resolutions[_selectedResolutionIndex];
+        var current = _availableResolutions[_selectedResolutionIndex];
         _hasChanges = current.Width != _game.Settings.ScreenWidth ||
                       current.Height != _game.Settings.ScreenHeight ||
                       _selectedFullscreen != _game.Settings.Fullscreen;
@@ -344,7 +340,7 @@ public sealed class OptionsScene : IScene
 
     private void OnResolutionRight()
     {
-        _selectedResolutionIndex = Math.Min(Resolutions.Length - 1, _selectedResolutionIndex + 1);
+        _selectedResolutionIndex = Math.Min(_availableResolutions.Length - 1, _selectedResolutionIndex + 1);
         _resolutionValue.DisplayedString = GetCurrentResolutionLabel();
         UpdateChangesState();
         UpdateLayout();
@@ -361,7 +357,7 @@ public sealed class OptionsScene : IScene
     {
         if (!_hasChanges) return;
 
-        var resolution = Resolutions[_selectedResolutionIndex];
+        var resolution = _availableResolutions[_selectedResolutionIndex];
         _game.ApplyResolution(resolution.Width, resolution.Height, _selectedFullscreen);
 
         _hasChanges = false;
